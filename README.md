@@ -17,6 +17,20 @@ Repositório: https://github.com/jezielbrizolla/IaC
    gera confusão que parece bug do Terraform e não é.
 4. **Anote.** Uma seção `## Notas` no fim de cada README, com o que te surpreendeu.
    Vira runbook, e é o material que você reusa numa entrevista.
+5. **Quem roda os comandos do lab é o JZ, no terminal dele — não o Claude.**
+   Isso vale pra `packer init/build`, `terraform apply`, `docker run`, tudo. O
+   Claude explica, revisa o arquivo, interpreta erro que o JZ colar de volta —
+   mas não executa o passo do lab por conta própria na primeira vez. Exceções
+   claras: setup de máquina/tooling (Bloco 0, `setup-automation/`),
+   verificações read-only (`docker images`, `terraform state list`, ler um
+   arquivo), e **testar um `run.ps1` de automação que o próprio Claude acabou
+   de escrever** — isso é validar o deliverable, não fazer o lab pelo JZ (o
+   lab em si já foi feito manualmente antes de existir automação pra ele).
+6. **Primeira vez: manual. Depois de entender: automatiza.** Um lab novo se
+   faz na mão, com ajuda guiada, sem copiar o código do README direto (ver
+   regra 1 — o código no README é gabarito/referência, a disciplina de tentar
+   antes é por sua conta). Só depois de feito e entendido é que faz sentido
+   criar o `run.ps1` daquele lab pra reverificar rápido nas próximas vezes.
 
 ## Ordem
 
@@ -39,3 +53,26 @@ sozinho e loga o que fez.
 **Blocos 4–5 (Hyper-V + Kubernetes):** Hyper-V habilitado, ISOs baixadas, Ansible
 no WSL, Helm e kubectl no host. Veja `00-setup/SETUP-HYPERV.md` antes de começar
 o lab 15 — nada disso é necessário para os Blocos 0–3.
+
+## Automação (`_lib/` + `run.ps1` por lab)
+
+`_lib/Logging.psm1` e `_lib/Checklist.psm1` são a biblioteca compartilhada de
+automação do projeto inteiro — logging colorido em console + arquivo, e
+atualização automática de `CHECKLIST.md` (nunca desmarca algo já feito à mão).
+Usada pelo `00-setup/setup-automation/setup.ps1` (prepara a máquina) e por
+qualquer `run.ps1` dentro de uma pasta de lab (ex: `01-packer-primeiro-build/run.ps1`).
+
+Não é um orquestrador central único — cada lab que ganha um `run.ps1` é
+independente, do jeito que o README + CHECKLIST já são hoje (regra 6 acima).
+O padrão de um lab com automação:
+```
+01-packer-primeiro-build/
+├── README.md
+├── CHECKLIST.md
+├── docker.pkr.hcl        # o que você escreveu
+├── run.ps1               # ciclo automatizado (roda depois de aprender manual)
+├── .gitignore             # ignora logs/*
+└── logs/                  # gerado em runtime, gitignored
+```
+Nem todo lab precisa de `run.ps1` — só vale a pena depois que o lab já foi
+feito manualmente e faz sentido reverificar/repetir rápido.

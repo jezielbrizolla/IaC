@@ -19,9 +19,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 $root = $PSScriptRoot
+# setup-automation -> 00-setup -> labs -> _lib (biblioteca compartilhada por todos os labs)
+$sharedLib = Join-Path $root "..\..\_lib"
 
-Import-Module (Join-Path $root "lib\Logging.psm1") -Force
-Import-Module (Join-Path $root "lib\Checklist.psm1") -Force
+Import-Module (Join-Path $sharedLib "Logging.psm1") -Force
+Import-Module (Join-Path $sharedLib "Checklist.psm1") -Force
 
 $logDir = Join-Path $root "logs"
 $logPath = Start-SetupLog -LogDirectory $logDir
