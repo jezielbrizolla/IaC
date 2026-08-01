@@ -1,12 +1,21 @@
 # Checklist — 02-packer-provisioners
 
-- [x] Criar `nginx.conf`
-- [x] Criar `docker.pkr.hcl` com `provisioner "shell" { inline = [...] }` + `provisioner "file"`
-- [x] `packer init .` / `packer build .` OK
-- [x] Container rodando: `docker run -d --name nginx-lab -p 8080:80 <imagem> nginx -g "daemon off;"`
-- [x] `curl localhost:8080` retorna o texto de teste
-- [x] `docker rm -f nginx-lab` (limpou)
-- [ ] Criar `setup.sh` e migrar `inline` → `script = "setup.sh"`
-- [ ] Rebuild com script externo funcionou igual
+Artefatos:
+- `packer/templates/ubuntu-nginx.pkr.hcl`
+- `packer/scripts/install-nginx.sh`
+- `packer/files/nginx/default.conf`
+
+- [x] Escrever a config do nginx
+- [x] Escrever o template com `provisioner "shell" { inline = [...] }` + `provisioner "file"`
+- [x] `packer init` / `packer build` OK
+- [x] Container rodando e servindo a config própria
+- [x] Resposta HTTP retorna o texto de teste
+- [x] Container de teste removido
+- [x] Migrar `inline` → `script` externo
+      <br>_Nota: o script de refactor foi escrito por mim (JZ) — regex + here-string em
+      PowerShell — mas quem aterrissou o arquivo na estrutura nova foi o Claude,
+      durante a reestruturação do repo. O conceito (extrair para script reutilizável)
+      foi entendido; a execução final veio junto da migração._
+- [x] Rebuild com script externo funcionou igual
 - [ ] Quebrei: inverti a ordem `file` antes de `shell`, li o erro, voltei ao normal
 - [ ] Notas preenchidas no README
