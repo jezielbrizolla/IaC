@@ -32,7 +32,9 @@ Repositório: https://github.com/jezielbrizolla/IaC
 ## Pré-requisitos
 
 **Blocos 0–3 (Docker):** `terraform -version`, `packer version` e
-`docker run hello-world` precisam funcionar. Se algum falhar, volte ao `00-setup`.
+`docker run hello-world` precisam funcionar. Se algum falhar, volte ao `00-setup` —
+ou rode `00-setup/setup-automation/setup.ps1`, que verifica/instala tudo isso
+sozinho e loga o que fez.
 
 **Blocos 4–5 (Hyper-V + Kubernetes):** Hyper-V habilitado, ISOs baixadas, Ansible
 no WSL, Helm e kubectl no host. Veja `00-setup/SETUP-HYPERV.md` antes de começar

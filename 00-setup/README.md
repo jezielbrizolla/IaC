@@ -5,6 +5,19 @@
 ## Objetivo
 Ter Packer, Terraform e Docker funcionando, e a pasta de labs versionada.
 
+## Automatizado
+Este é o único bloco todo manual do repo — o que é irônico num projeto sobre
+automação. `setup-automation/` tem um orquestrador PowerShell que roda os
+passos 1–6 abaixo sozinho (instala o que falta, valida o resto) e loga tudo
+em console + arquivo:
+```powershell
+cd setup-automation
+.\setup.ps1
+```
+Veja `setup-automation/README.md` para as flags (`-Push`, `-Unattended`) e o
+que cada passo faz. Os passos manuais abaixo continuam valendo como
+referência — o script segue exatamente essa mesma lista.
+
 ## Passos
 1. `winget install Hashicorp.Terraform` e `winget install Hashicorp.Packer`.
    Abra um terminal **novo** (o PATH só atualiza em sessão nova).
