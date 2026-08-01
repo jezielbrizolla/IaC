@@ -46,16 +46,18 @@ tasks:
     desc: "Valida todos os templates (ou só um, com IMAGE=nome)"
     dir: '{{.PACKER_DIR}}'
     cmds:
+      # Sintaxe POSIX: o Task interpreta os comandos com mvdan/sh (shell
+      # embutido), não com PowerShell — mesmo no Windows. Por isso nada de
+      # Get-ChildItem/Write-Host aqui.
       - |
-        if ("{{.IMAGE}}") {
+        if [ -n "{{.IMAGE}}" ]; then
           packer validate "templates/{{.IMAGE}}.pkr.hcl"
-        } else {
-          Get-ChildItem templates/*.pkr.hcl | ForEach-Object {
-            Write-Host "==> validate $($_.Name)" -ForegroundColor Cyan
-            packer validate $_.FullName
-            if ($LASTEXITCODE -ne 0) { exit 1 }
-          }
-        }
+        else
+          for tpl in templates/*.pkr.hcl; do
+            echo "==> validate $tpl"
+            packer validate "$tpl" || exit 1
+          done
+        fi
 
   packer:build:
     desc: "Builda uma imagem. Requer IMAGE=<nome do template sem extensão>"
@@ -90,7 +92,7 @@ tasks:
   clean:
     desc: "Remove imagens Docker sem tag geradas pelos builds"
     cmds:
-      - powershell -Command "docker image prune -f"
+      - docker image prune -f
 
   status:
     desc: "Progresso dos checklists dos labs"

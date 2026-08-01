@@ -15,8 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Action pinada por tag, mesma regra que o repo aplica a provider/plugin:
+      # @main é um alvo móvel e quebra build sem ninguém ter mudado nada.
       - name: Setup Packer
-        uses: hashicorp/setup-packer@main
+        uses: hashicorp/setup-packer@v3
         with:
           version: latest
 
@@ -63,8 +65,9 @@ jobs:
             terraform -chdir="$dir" init -backend=false
             terraform -chdir="$dir" validate
           done
-          [ "$found" -eq 0 ] && echo "Nenhum stack com main.tf ainda - pulando."
-          exit 0
+          if [ "$found" -eq 0 ]; then
+            echo "Nenhum stack com main.tf ainda - pulando."
+          fi
 
   shell:
     name: shellcheck

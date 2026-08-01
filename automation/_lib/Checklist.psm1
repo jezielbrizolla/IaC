@@ -1,16 +1,11 @@
-# Marca itens de um CHECKLIST.md como [x] com base no que um orquestrador de
-# lab validou de fato nesta execucao. Nunca desmarca um item ja marcado
-# manualmente. Reusado por 00-setup/setup-automation e pelo run.ps1 de cada
-# lab - cada chamador passa o PatternMap especifico do seu CHECKLIST.md.
+# Marca itens do CHECKLIST.md do 00-setup como [x] com base no que o
+# orquestrador validou de fato nesta execucao. Nunca desmarca um item ja
+# marcado manualmente.
 
 function Update-SetupChecklist {
     param(
         [Parameter(Mandatory)][string]$ChecklistPath,
-        [Parameter(Mandatory)]$Results,
-        # Pattern (regex, aplicado a linha do checklist) -> Name do resultado
-        # que precisa estar Status=OK para a linha virar [x]. Se omitido, usa
-        # o mapa do 00-setup (compatibilidade com o orquestrador original).
-        [Parameter()]$PatternMap
+        [Parameter(Mandatory)]$Results
     )
 
     if (-not (Test-Path $ChecklistPath)) {
@@ -18,26 +13,25 @@ function Update-SetupChecklist {
         return
     }
 
-    if (-not $PatternMap) {
-        $PatternMap = @(
-            @{ Pattern = "Instalar Terraform";                  Result = "Terraform" }
-            @{ Pattern = "Instalar Packer";                     Result = "Packer" }
-            @{ Pattern = "Instalar Docker Desktop";              Result = "Docker Desktop" }
-            @{ Pattern = "Habilitar integra";                    Result = "Docker Desktop" }
-            @{ Pattern = "Instalar extens";                      Result = "VS Code Extension" }
-            @{ Pattern = "Inicializar reposit";                  Result = "Git Repo" }
-            @{ Pattern = "ssh-iac.*Ubuntu WSL";                  Result = "SSH WSL" }
-            @{ Pattern = "ssh-iac.*PowerShell";                  Result = "SSH Windows" }
-            @{ Pattern = "ssh -T git@github\.com.*Windows";      Result = "SSH Windows" }
-            @{ Pattern = "ssh -T git@github\.com.*WSL";          Result = "SSH WSL" }
-            @{ Pattern = "repositorio remoto";                   Result = "Git Remote" }
-            @{ Pattern = "origin";                                Result = "Git Remote" }
-            @{ Pattern = "Validar .terraform -version";          Result = "Terraform" }
-            @{ Pattern = "Validar .packer version";              Result = "Packer" }
-            @{ Pattern = "Validar .docker run hello-world";      Result = "Docker Desktop" }
-        )
-    }
-    $map = $PatternMap
+    # Pattern (regex, aplicado a linha do checklist) -> Name do resultado que
+    # precisa estar Status=OK para a linha virar [x].
+    $map = @(
+        @{ Pattern = "Instalar Terraform";                  Result = "Terraform" }
+        @{ Pattern = "Instalar Packer";                     Result = "Packer" }
+        @{ Pattern = "Instalar Docker Desktop";              Result = "Docker Desktop" }
+        @{ Pattern = "Habilitar integra";                    Result = "Docker Desktop" }
+        @{ Pattern = "Instalar extens";                      Result = "VS Code Extension" }
+        @{ Pattern = "Inicializar reposit";                  Result = "Git Repo" }
+        @{ Pattern = "ssh-iac.*Ubuntu WSL";                  Result = "SSH WSL" }
+        @{ Pattern = "ssh-iac.*PowerShell";                  Result = "SSH Windows" }
+        @{ Pattern = "ssh -T git@github\.com.*Windows";      Result = "SSH Windows" }
+        @{ Pattern = "ssh -T git@github\.com.*WSL";          Result = "SSH WSL" }
+        @{ Pattern = "repositorio remoto";                   Result = "Git Remote" }
+        @{ Pattern = "origin";                                Result = "Git Remote" }
+        @{ Pattern = "Validar .terraform -version";          Result = "Terraform" }
+        @{ Pattern = "Validar .packer version";              Result = "Packer" }
+        @{ Pattern = "Validar .docker run hello-world";      Result = "Docker Desktop" }
+    )
 
     $lines = Get-Content -Path $ChecklistPath -Encoding UTF8
     $changed = $false
