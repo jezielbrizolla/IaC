@@ -1,0 +1,81 @@
+name: validate
+
+# Gate de qualidade do IaC: formatação e validação de sintaxe em todo PR e push.
+# É o que impede HCL quebrado ou fora do padrão de entrar na main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  packer:
+    name: packer fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: latest
+
+      - name: packer fmt -check
+        working-directory: packer
+        run: packer fmt -check -recursive templates/
+
+      - name: packer init + validate
+        working-directory: packer
+        run: |
+          for tpl in templates/*.pkr.hcl; do
+            echo "==> $tpl"
+            packer init "$tpl"
+            packer validate "$tpl"
+          done
+
+  terraform:
+    name: terraform fmt + validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: terraform fmt -check
+        run: |
+          if [ -n "$(find terraform -name '*.tf' -print -quit 2>/dev/null)" ]; then
+            terraform fmt -check -recursive terraform/
+          else
+            echo "Nenhum .tf ainda - pulando (bloco 2 em diante)."
+          fi
+
+      - name: terraform validate (por stack)
+        run: |
+          shopt -s nullglob
+          found=0
+          for dir in terraform/stacks/*/ terraform/envs/*/; do
+            [ -f "$dir/main.tf" ] || continue
+            found=1
+            echo "==> $dir"
+            terraform -chdir="$dir" init -backend=false
+            terraform -chdir="$dir" validate
+          done
+          [ "$found" -eq 0 ] && echo "Nenhum stack com main.tf ainda - pulando."
+          exit 0
+
+  shell:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck nos scripts de provisionamento
+        run: |
+          if [ -n "$(find . -name '*.sh' -not -path './.git/*' -print -quit)" ]; then
+            sudo apt-get update -qq && sudo apt-get install -y shellcheck
+            find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck
+          else
+            echo "Nenhum .sh encontrado."
+          fi

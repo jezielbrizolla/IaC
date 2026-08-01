@@ -1,0 +1,38 @@
+# Normalização de fim de linha.
+#
+# O repo é editado no Windows mas boa parte do código roda em Linux (containers,
+# VMs, CI). Script com CRLF quebra no destino com "bad interpreter: ...^M" —
+# por isso tudo que é executado em Linux fica travado em LF, independente da
+# config local de core.autocrlf de quem clonar.
+
+* text=auto
+
+# Executados em Linux — precisam de LF obrigatoriamente
+*.sh            text eol=lf
+*.bash          text eol=lf
+
+# IaC e config: LF por convenção (e para diff limpo entre plataformas)
+*.hcl           text eol=lf
+*.pkr.hcl       text eol=lf
+*.tf            text eol=lf
+*.tfvars        text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.json          text eol=lf
+*.conf          text eol=lf
+*.md            text eol=lf
+
+# Executados no Windows — CRLF é o correto
+*.ps1           text eol=crlf
+*.psm1          text eol=crlf
+*.psd1          text eol=crlf
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# Binários — nunca normalizar
+*.png           binary
+*.jpg           binary
+*.gif           binary
+*.ico           binary
+*.vhdx          binary
+*.iso           binary

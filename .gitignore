@@ -15,7 +15,14 @@ override.tf.json
 # Packer
 packer_cache/
 manifest.json
+# vars de configuracao SAO versionados (fazem parte da definicao da imagem).
+# Segredo nunca vai em arquivo: use PKR_VAR_* / Vault. Só o padrao *.secret.pkrvars.hcl
+# fica de fora, como valvula de escape para teste local.
+*.secret.pkrvars.hcl
 
-# NAO ignorar: .terraform.lock.hcl deve ser versionado.
-# Ele trava as versoes de provider para todo mundo do time.
-# Se aparecer numa regra acima por engano, corrija — nao adicione aqui.
+# Logs de automacao (gerados em runtime)
+automation/**/logs/
+
+# NAO ignorar: .terraform.lock.hcl e .packer.lock.hcl devem ser versionados.
+# Eles travam as versoes de provider/plugin para todo mundo do time.
+# Se aparecerem numa regra acima por engano, corrija — nao adicione aqui.

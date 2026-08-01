@@ -1,0 +1,98 @@
+version: '3'
+
+# Camada de verbos do repo. Rode sempre da RAIZ — nenhuma task exige cd.
+#   task                  lista tudo
+#   task packer:build IMAGE=ubuntu-nginx
+#   task packer:test  IMAGE=ubuntu-nginx
+#
+# Instalar o runner: winget install Task.Task
+
+vars:
+  PACKER_DIR: packer
+
+tasks:
+  default:
+    desc: Lista as tasks disponíveis
+    cmds:
+      - task --list
+    silent: true
+
+  # ---------------------------------------------------------------- setup ---
+  setup:
+    desc: "Prepara a máquina (Terraform, Packer, Docker, git, SSH) - bloco 0"
+    cmds:
+      - powershell -ExecutionPolicy Bypass -File automation/setup/setup.ps1
+
+  # --------------------------------------------------------------- packer ---
+  packer:init:
+    desc: "Baixa os plugins declarados nos templates"
+    dir: '{{.PACKER_DIR}}'
+    cmds:
+      - packer init templates/
+
+  packer:fmt:
+    desc: "Formata todos os templates .pkr.hcl"
+    dir: '{{.PACKER_DIR}}'
+    cmds:
+      - packer fmt -recursive templates/
+
+  packer:fmt:check:
+    desc: "Falha se algum template não estiver formatado (usado no CI)"
+    dir: '{{.PACKER_DIR}}'
+    cmds:
+      - packer fmt -check -recursive templates/
+
+  packer:validate:
+    desc: "Valida todos os templates (ou só um, com IMAGE=nome)"
+    dir: '{{.PACKER_DIR}}'
+    cmds:
+      - |
+        if ("{{.IMAGE}}") {
+          packer validate "templates/{{.IMAGE}}.pkr.hcl"
+        } else {
+          Get-ChildItem templates/*.pkr.hcl | ForEach-Object {
+            Write-Host "==> validate $($_.Name)" -ForegroundColor Cyan
+            packer validate $_.FullName
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+        }
+
+  packer:build:
+    desc: "Builda uma imagem. Requer IMAGE=<nome do template sem extensão>"
+    dir: '{{.PACKER_DIR}}'
+    preconditions:
+      - sh: '[ -n "{{.IMAGE}}" ]'
+        msg: "Informe a imagem: task packer:build IMAGE=ubuntu-nginx"
+    cmds:
+      - packer init "templates/{{.IMAGE}}.pkr.hcl"
+      - packer build "templates/{{.IMAGE}}.pkr.hcl"
+
+  packer:test:
+    desc: "Sobe a última imagem buildada e testa via HTTP. Requer IMAGE="
+    preconditions:
+      - sh: '[ -n "{{.IMAGE}}" ]'
+        msg: "Informe a imagem: task packer:test IMAGE=ubuntu-nginx"
+    cmds:
+      - powershell -ExecutionPolicy Bypass -File automation/test-image.ps1 -Image "{{.IMAGE}}"
+
+  # ------------------------------------------------------------ terraform ---
+  tf:fmt:
+    desc: "Formata todo o código Terraform"
+    cmds:
+      - terraform fmt -recursive terraform/
+
+  tf:fmt:check:
+    desc: "Falha se algum .tf não estiver formatado (usado no CI)"
+    cmds:
+      - terraform fmt -check -recursive terraform/
+
+  # ----------------------------------------------------------------- misc ---
+  clean:
+    desc: "Remove imagens Docker sem tag geradas pelos builds"
+    cmds:
+      - powershell -Command "docker image prune -f"
+
+  status:
+    desc: "Progresso dos checklists dos labs"
+    cmds:
+      - powershell -ExecutionPolicy Bypass -File automation/status.ps1
