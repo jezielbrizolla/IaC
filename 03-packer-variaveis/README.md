@@ -5,23 +5,92 @@
 ## Objetivo
 Parametrizar a imagem base e a versão do app.
 
-## O que escrever
-- `variable "base_image"` e `variable "app_version"` com `type` e `default`
-- `locals` derivando o nome/tag final da imagem
-- Um `variables.pkrvars.hcl` com valores
+## Arquivos a criar
 
-## Precedência (teste as quatro)
+`docker.pkr.hcl`:
+```hcl
+packer {
+  required_plugins {
+    docker = {
+      source  = "github.com/hashicorp/docker"
+      version = "~> 1"
+    }
+  }
+}
+
+variable "base_image" {
+  type    = string
+  default = "ubuntu:22.04"
+}
+
+variable "app_version" {
+  type    = string
+  default = "1.0"
+}
+
+locals {
+  image_tag = "meuapp:${var.app_version}"
+}
+
+source "docker" "app" {
+  image  = var.base_image
+  commit = true
+}
+
+build {
+  sources = ["source.docker.app"]
+
+  provisioner "shell" {
+    inline = ["echo building ${local.image_tag}"]
+  }
+
+  post-processor "docker-tag" {
+    repository = "meuapp"
+    tag        = [var.app_version]
+  }
+}
 ```
-default  <  variables.pkrvars.hcl  <  -var  <  PKR_VAR_*
+
+`variables.pkrvars.hcl`:
+```hcl
+app_version = "1.1"
 ```
-Rode `packer build -var 'app_version=2.0' .` e confirme com `packer inspect .`.
+
+## Rodar — teste as quatro formas de passar valor
+```powershell
+cd labs\03-packer-variaveis
+packer init .
+packer fmt .
+packer validate .
+
+# 1. default (app_version = 1.0)
+packer build .
+
+# 2. -var
+packer build -var "app_version=2.0" .
+
+# 3. -var-file
+packer build -var-file="variables.pkrvars.hcl" .
+
+# 4. env var PKR_VAR_*
+$env:PKR_VAR_app_version = "3.0"
+packer build .
+Remove-Item Env:\PKR_VAR_app_version
+
+packer inspect .
+docker images meuapp
+```
+Confirme no `docker images` que existem tags `1.0`, `2.0`, `1.1` e `3.0`.
 
 ## Quebre isto
-Declare uma `variable` sem `default` e sem passar valor. Veja o erro de validação.
-Depois marque-a como `sensitive = true` e observe como ela aparece (ou não) no output.
+1. Declare uma nova `variable "must_have" { type = string }` **sem** `default` e sem
+   passar valor em lugar nenhum. Rode `packer build .` e leia o erro de validação.
+2. Marque-a `sensitive = true`, passe um valor e veja como ela some do output do build
+   (mas não do `packer inspect .` — objetivo é aprender a diferença).
+3. Remova a variável de teste antes de seguir.
 
 ## Critério de conclusão
-`packer fmt` e `packer validate` limpos, e o mesmo template produz duas imagens
-diferentes só mudando os vars.
+`packer fmt .` e `packer validate .` limpos, e o mesmo template produz 4 imagens
+diferentes só mudando a forma de passar `app_version`.
 
 ## Notas

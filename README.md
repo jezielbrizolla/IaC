@@ -7,8 +7,10 @@ Repositório: https://github.com/jezielbrizolla/IaC
 
 ## Regras
 
-1. **Escreva o código você.** Cada pasta tem só um `README.md` com objetivo e critério de
-   conclusão. Os `.pkr.hcl` e `.tf` são o exercício — não vêm prontos.
+1. **Cada pasta tem `README.md` + `CHECKLIST.md`.** O README é o que precisa ser
+   feito — com objetivo, código, comandos exatos e critério de conclusão. O
+   CHECKLIST é onde você marca o que já fez naquele lab especificamente (igual
+   ao `00-setup/CHECKLIST.md`, que já usamos). README = plano; CHECKLIST = progresso.
 2. **Quebre antes de concluir.** Cada README tem uma seção `## Quebre isto`. Um lab só está
    feito depois que você provocou o erro, leu a mensagem e entendeu.
 3. **Sempre destrua no fim.** `terraform destroy` / `docker rm`. Deixar lixo entre labs

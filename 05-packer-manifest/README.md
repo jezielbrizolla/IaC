@@ -5,31 +5,82 @@
 ## Objetivo
 Fazer o Packer registrar **qual** imagem ele produziu, em formato legível por máquina.
 
-## O que escrever
+## Arquivos a criar
+
+`docker.pkr.hcl` (reaproveite o do Lab 3, adicione o post-processor):
 ```hcl
-post-processor "manifest" {
-  output     = "manifest.json"
-  strip_path = true
+packer {
+  required_plugins {
+    docker = {
+      source  = "github.com/hashicorp/docker"
+      version = "~> 1"
+    }
+  }
+}
+
+variable "app_version" {
+  type    = string
+  default = "1.0"
+}
+
+source "docker" "app" {
+  image  = "ubuntu:22.04"
+  commit = true
+}
+
+build {
+  sources = ["source.docker.app"]
+
+  provisioner "shell" {
+    inline = ["echo build ${var.app_version}"]
+  }
+
+  post-processor "docker-tag" {
+    repository = "meuapp"
+    tag        = [var.app_version]
+  }
+
+  post-processor "manifest" {
+    output     = "manifest.json"
+    strip_path = true
+  }
 }
 ```
 
+## Rodar
+```powershell
+cd labs\05-packer-manifest
+packer init .
+packer build .
+Get-Content manifest.json | ConvertFrom-Json | ConvertTo-Json -Depth 5
+```
+
+Rode de novo com outra versão e veja o manifest **acumular**:
+```powershell
+packer build -var "app_version=2.0" .
+Get-Content manifest.json | ConvertFrom-Json | Select-Object -ExpandProperty builds
+```
+
 ## Depois do build
-Abra o `manifest.json`. Entenda a estrutura: `builds[]`, cada um com `name`,
-`artifact_id`, `custom_data`, mais o campo `last_run_uuid` no topo.
-Rode o build de novo e veja que ele **acumula** entradas no array.
+Abra `manifest.json` no editor. Entenda a estrutura: `builds[]` (array que cresce a
+cada build), cada item com `name`, `artifact_id`, `custom_data`; e `last_run_uuid`
+no topo, marcando o build mais recente.
 
 ## Por que isto importa
-Este JSON é o contrato entre Packer e Terraform. No Bloco 3 o Terraform vai lê-lo com
-`jsondecode()` e subir exatamente esta imagem. Na AWS o equivalente é o Terraform buscar
-a AMI com `data "aws_ami"` filtrando por uma tag que o Packer escreveu.
+Este JSON é o contrato entre Packer e Terraform. No Bloco 3 (`12-capstone-ponte`) o
+Terraform vai lê-lo com `jsondecode()` e subir exatamente esta imagem. Na AWS o
+equivalente é o Terraform buscar a AMI com `data "aws_ami"` filtrando por uma tag
+que o Packer escreveu.
 
 ## Quebre isto
-Rode 3 builds seguidos e depois tente pegar "a imagem certa" do manifest.
-Você vai perceber que precisa **decidir uma regra**: último item do array?
-Filtrar por `name`? Casar com `last_run_uuid`?
-Essa decisão é o design da ponte — resolva aqui, não no Bloco 3.
+Rode 3 builds seguidos (`-var "app_version=3.0"`, `4.0`, `5.0`) e depois tente
+identificar "a imagem certa" olhando só o `manifest.json`. Você vai perceber que
+precisa **decidir uma regra**: último item do array (`builds[length(builds)-1]`)?
+Filtrar por `custom_data`? Casar com `last_run_uuid`?
+Escreva a regra escolhida nas Notas — é o design da ponte, resolva aqui, não no capstone.
 
 ## Critério de conclusão
-`manifest.json` existe e você sabe qual campo contém o identificador da imagem.
+`manifest.json` existe, tem múltiplos builds, e você sabe qual campo/expressão usar
+para pegar o ID da imagem mais recente.
 
 ## Notas
