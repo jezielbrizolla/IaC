@@ -23,11 +23,17 @@ Repositório: https://github.com/jezielbrizolla/IaC
 | # | Pasta | Bloco |
 |---|---|---|
 | 00 | `00-setup` | Setup |
-| 01–05 | `0*-packer-*` | Bloco 1 — Packer |
-| 06–11 | `*-tf-*` | Bloco 2 — Terraform |
-| 12–14 | `*-capstone-*` | Bloco 3 — Capstone |
+| 01–05 | `0*-packer-*` | Bloco 1 — Packer (Docker) |
+| 06–11 | `*-tf-*` | Bloco 2 — Terraform (Docker) |
+| 12–14 | `*-capstone-*` | Bloco 3 — Capstone (Docker) |
+| 15–18 | `*-packer-hyperv-*` / `*-ansible-*` / `*-golden-*` / `*-tf-hyperv-*` | Bloco 4 — Windows Server (Hyper-V) |
+| 19–22 | `*-k8s-*` / `*-tf-kubernetes-*` | Bloco 5 — Kubernetes (mini-KOB) |
 
 ## Pré-requisitos
 
-`terraform -version`, `packer version` e `docker run hello-world` precisam funcionar.
-Se algum falhar, volte ao `00-setup`.
+**Blocos 0–3 (Docker):** `terraform -version`, `packer version` e
+`docker run hello-world` precisam funcionar. Se algum falhar, volte ao `00-setup`.
+
+**Blocos 4–5 (Hyper-V + Kubernetes):** Hyper-V habilitado, ISOs baixadas, Ansible
+no WSL, Helm e kubectl no host. Veja `00-setup/SETUP-HYPERV.md` antes de começar
+o lab 15 — nada disso é necessário para os Blocos 0–3.
