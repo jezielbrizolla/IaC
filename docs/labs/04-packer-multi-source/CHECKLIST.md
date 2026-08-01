@@ -1,11 +1,13 @@
 # Checklist — 04-packer-multi-source
 
-- [ ] Criar `docker.pkr.hcl` com dois `source` (ubuntu, alpine)
-- [ ] Provisioners com `only = [...]` separados por source
-- [ ] `post-processor "docker-tag"` usando `${build.name}`
-- [ ] `packer build .` produziu as duas imagens num único comando
-- [ ] `docker images meuapp` mostra `docker.ubuntu` e `docker.alpine`
-- [ ] Quebrei: um provisioner `apt-get` só, sem `only`, vi o Alpine falhar
-- [ ] Li o erro completo e identifiquei em qual source falhou
-- [ ] Voltei para os provisioners separados
-- [ ] Notas preenchidas no README
+Artefato: `packer/templates/multi-base.pkr.hcl`
+
+- [x] Escrever o template com dois `source` (ubuntu, alpine)
+- [x] Provisioners com `only = [...]` separados por source
+- [x] `post-processor "docker-tag"` usando `tags = ["${source.name}"]`
+- [x] `task packer:build IMAGE=multi-base` produziu as duas imagens num único comando
+- [x] `docker images multi-base` mostra `multi-base:ubuntu` e `multi-base:alpine`
+- [x] Quebrei: um provisioner `apt-get` só, sem `only`, vi o Alpine falhar ("apt-get: not found", exit 127)
+- [x] Li o erro completo e identifiquei em qual source falhou (docker.alpine)
+- [x] Voltei para os provisioners separados
+- [x] Notas preenchidas no README
