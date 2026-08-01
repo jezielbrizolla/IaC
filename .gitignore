@@ -1,0 +1,21 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+# variaveis com valores locais/sensiveis
+*.auto.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Packer
+packer_cache/
+manifest.json
+
+# NAO ignorar: .terraform.lock.hcl deve ser versionado.
+# Ele trava as versoes de provider para todo mundo do time.
+# Se aparecer numa regra acima por engano, corrija — nao adicione aqui.
