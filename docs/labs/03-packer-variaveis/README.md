@@ -103,3 +103,21 @@ Confirme que existem `meuapp:1.0`, `meuapp:2.0`, `meuapp:1.1` e `meuapp:3.0`.
 template produz 4 imagens diferentes só mudando a forma de passar `app_version`.
 
 ## Notas
+
+- **O `post-processor "docker-tag"` do meu primeiro rascunho usava `tag`
+  (singular) — deprecated.** O Packer avisou sozinho: *"tag" option has been
+  replaced with "tags"*. O campo certo é `tags`, mesmo passando só um valor
+  na lista (`tags = [var.app_version]`).
+- **Colei o `variable "must_have"` dentro do `build{}` por engano** na hora
+  de montar o teste de quebra. O erro não foi "variável obrigatória" — foi
+  `Blocks of type "variable" are not expected here`, porque `variable` só
+  existe no nível raiz do arquivo, nunca aninhado dentro de `source{}` ou
+  `build{}`. Só depois de mover pra fora é que consegui ver o erro que o
+  lab realmente queria mostrar.
+- **`sensitive = true` mascara em dois lugares, não só um.** Testei passando
+  um valor identificável (`segredo123`) — não apareceu no output do build
+  nem no `packer inspect`, que mostrou `var.must_have: "<unknown>"` em vez
+  do valor real.
+- **`packer inspect` calcula o `locals` de verdade**, não só lista as
+  variáveis: com os defaults, mostrou `local.image_tag: "meuapp:1.0"` — a
+  interpolação `${var.app_version}` já resolvida.
