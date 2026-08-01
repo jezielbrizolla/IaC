@@ -60,14 +60,14 @@ tasks:
         fi
 
   packer:build:
-    desc: "Builda uma imagem. Requer IMAGE=<nome do template sem extensão>"
+    desc: "Builda uma imagem. Requer IMAGE=<nome do template sem extensão>. Args extras (-var, -var-file) vão depois de --"
     dir: '{{.PACKER_DIR}}'
     preconditions:
       - sh: '[ -n "{{.IMAGE}}" ]'
         msg: "Informe a imagem: task packer:build IMAGE=ubuntu-nginx"
     cmds:
       - packer init "templates/{{.IMAGE}}.pkr.hcl"
-      - packer build "templates/{{.IMAGE}}.pkr.hcl"
+      - packer build {{.CLI_ARGS}} "templates/{{.IMAGE}}.pkr.hcl"
 
   packer:test:
     desc: "Sobe a última imagem buildada e testa via HTTP. Requer IMAGE="

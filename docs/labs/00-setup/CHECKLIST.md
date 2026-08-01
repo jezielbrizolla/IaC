@@ -19,6 +19,8 @@ Este arquivo registra o que já foi concluído no lab `00-setup`.
 - [x] Validar `terraform -version` → 1.15.8
 - [x] Validar `packer version` → 1.16.0
 - [x] Validar `docker run hello-world`
+- [x] Instalar go-task (`winget install Task.Task`)
+- [x] Validar `task --version` → 3.52.0
 
 ## Correções aplicadas nesta revisão
 - `wsl-ssh-setup.sh`: `chmod 600 ~/.ssh/config` quebrava com `set -e` se o arquivo

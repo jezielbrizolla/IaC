@@ -17,5 +17,5 @@ Artefatos:
       durante a reestruturação do repo. O conceito (extrair para script reutilizável)
       foi entendido; a execução final veio junto da migração._
 - [x] Rebuild com script externo funcionou igual
-- [ ] Quebrei: inverti a ordem `file` antes de `shell`, li o erro, voltei ao normal
-- [ ] Notas preenchidas no README
+- [x] Quebrei: inverti a ordem `file` antes de `shell`, li o erro ("must be a directory" — não o "no such file" esperado), voltei ao normal via `git checkout`
+- [x] Notas preenchidas no README

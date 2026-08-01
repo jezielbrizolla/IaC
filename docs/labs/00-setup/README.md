@@ -3,19 +3,29 @@
 **~1h · uma vez só**
 
 ## Objetivo
-Ter Packer, Terraform e Docker funcionando, e a pasta de labs versionada.
+Ter Packer, Terraform, Docker e o `task` (runner do Taskfile) funcionando, e a
+pasta de labs versionada.
 
 ## Automatizado
 Este é o único bloco todo manual do repo — o que é irônico num projeto sobre
-automação. `automation/setup/` tem um orquestrador PowerShell que roda os
-passos 1–6 abaixo sozinho (instala o que falta, valida o resto) e loga tudo
-em console + arquivo. Da raiz do repo:
+automação. `automation/setup/` tem um orquestrador PowerShell de 10 passos que
+roda tudo abaixo sozinho (instala o que falta, valida o resto) e loga tudo em
+console + arquivo. Da raiz do repo:
 ```powershell
 task setup
 ```
+
+> Se `task` ainda não existir na sua máquina (é o próprio passo 10 do
+> orquestrador), rode uma vez direto pelo PowerShell:
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File automation/setup/setup.ps1
+> ```
+> Depois disso `task setup` já funciona normalmente.
+
 Veja [`automation/setup/README.md`](../../../automation/setup/README.md) para as
 flags (`-Push`, `-Unattended`) e o que cada passo faz. Os passos manuais abaixo
-continuam valendo como referência — o script segue exatamente essa mesma lista.
+continuam valendo como referência — o script segue exatamente essa mesma lista,
+mais a instalação do `task`.
 
 ## Passos
 1. `winget install Hashicorp.Terraform` e `winget install Hashicorp.Packer`.
@@ -27,9 +37,13 @@ continuam valendo como referência — o script segue exatamente essa mesma list
 4. `git init` na pasta `labs/`. O `.gitignore` já está lá.
 5. SSH para o GitHub: gere/confirme a chave (`ssh-iac`) tanto no Windows/Git Bash
    quanto dentro do WSL Ubuntu se for usar os dois — são ambientes SSH separados.
-   Valide com `ssh -T git@github.com` nos dois antes de tentar o push (ver `wsl-ssh-setup.sh`).
+   Valide com `ssh -T git@github.com` nos dois antes de tentar o push (ver
+   [`automation/setup/wsl-ssh-setup.sh`](../../../automation/setup/wsl-ssh-setup.sh)).
 6. Crie o repositório remoto no GitHub, adicione o `origin` via SSH e faça o
    primeiro push (`git add`, `commit`, `git remote add origin`, `git push -u origin main`).
+7. `winget install Task.Task` — o runner do `Taskfile.yml`, o ponto de entrada
+   único do repo (ver [README raiz](../../../README.md)). Abra um terminal
+   **novo** e confirme com `task --version`.
 
 ## Checklist
 Veja `CHECKLIST.md` em `labs/00-setup/` para acompanhar o progresso do setup.
@@ -40,6 +54,7 @@ Repositório remoto: https://github.com/jezielbrizolla/IaC
 terraform -version     # 1.x
 packer version         # 1.x
 docker run hello-world # "Hello from Docker!"
+task --version          # 3.x
 ```
 
 ## Entenda

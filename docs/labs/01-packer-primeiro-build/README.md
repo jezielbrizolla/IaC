@@ -72,3 +72,18 @@ docker image ls --all --filter "dangling=true"
 sabe explicar em uma frase o que `commit = true` faz.
 
 ## Notas
+
+- **`commit = true` em uma frase:** faz o Packer rodar `docker commit` no
+  container ao final do build, transformando o estado dele numa imagem nova —
+  sem isso, o container seria só descartado quando o Packer termina.
+- **A imagem sem tag me confundiu no começo.** Depois do primeiro `packer build`,
+  `docker images` não mostrava nada — parecia que tinha falhado. Só apareceu com
+  `docker image ls --all --filter "dangling=true"`, como `<untagged>`. A imagem
+  estava lá o tempo todo; só não tinha nome ainda (isso só se resolve no lab 04).
+- **O "Quebre isto" não quebrou na primeira tentativa.** Comentar o bloco
+  `packer {}` não bastou — o build continuou funcionando, porque o Packer também
+  acha o plugin já instalado no disco, independente do `required_plugins`
+  declarado. Só vi o erro real (`unknown by Packer`) isolando o
+  `PACKER_PLUGIN_PATH` numa pasta vazia. Isso mudou como eu entendo o que o
+  `packer init` realmente faz: ele resolve o plugin pra baixar, mas depois de
+  baixado uma vez, o Packer não depende mais do bloco declarado pra achá-lo.

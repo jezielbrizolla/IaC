@@ -9,5 +9,5 @@ Artefato: `packer/templates/ubuntu-base.pkr.hcl`
 - [x] `task packer:build IMAGE=ubuntu-base` produziu uma imagem
 - [x] `docker image ls --all --filter "dangling=true"` mostra a imagem (aparece como `<untagged>` — normal, ainda sem tag; o lab 04 fecha isso)
 - [x] Quebrei: comentei `required_plugins` **e** isolei o cache de plugins, rodei o build e li o erro real ("The source docker is unknown by Packer")
-- [ ] Sei explicar em 1 frase o que `commit = true` faz
-- [ ] Notas preenchidas no README
+- [x] Sei explicar em 1 frase o que `commit = true` faz
+- [x] Notas preenchidas no README

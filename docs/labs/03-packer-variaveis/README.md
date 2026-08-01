@@ -1,21 +1,17 @@
 # Packer Lab 3 — variáveis e locals
 
-> **⚠ Conteúdo pendente de migração de estrutura.**
-> Este README ainda descreve o layout antigo (uma pasta por lab, com
-> `cd` e arquivos soltos). O repo agora usa shape de produção: o código
-> deste lab vai morar em `packer/templates/ + packer/vars/`, e os comandos entram por
-> `task` a partir da raiz — sem `cd`. O conteúdo conceitual (HCL, o que
-> cada bloco faz, o "Quebre isto") segue válido; os **caminhos e comandos**
-> serão ajustados quando chegarmos neste lab. Ver [README raiz](../../../README.md).
-
 **~1h**
 
 ## Objetivo
 Parametrizar a imagem base e a versão do app.
 
-## Arquivos a criar
+## Onde o código mora
+| Arquivo | Papel |
+|---|---|
+| `packer/templates/app-versioned.pkr.hcl` | o template |
+| `packer/vars/app-versioned.pkrvars.hcl` | valores de exemplo (`app_version = "1.1"`) |
 
-`docker.pkr.hcl`:
+## O template
 ```hcl
 packer {
   required_plugins {
@@ -59,46 +55,51 @@ build {
 }
 ```
 
-`variables.pkrvars.hcl`:
-```hcl
-app_version = "1.1"
-```
+Repare que este template já tagueia a imagem (`post-processor "docker-tag"`) —
+diferente dos labs 01 e 02, aqui você vai ver `meuapp:1.0`, `meuapp:2.0` etc.
+direto no `docker images`, sem precisar de `--all`.
 
-## Rodar — teste as quatro formas de passar valor
+## Rodar — as quatro formas de passar valor
+
+O Taskfile builda com `IMAGE=nome`; args extras do Packer (`-var`, `-var-file`)
+vão depois de `--`:
+
 ```powershell
-cd labs\03-packer-variaveis
-packer init .
-packer fmt .
-packer validate .
+task packer:validate IMAGE=app-versioned
 
 # 1. default (app_version = 1.0)
-packer build .
+task packer:build IMAGE=app-versioned
 
 # 2. -var
-packer build -var "app_version=2.0" .
+task packer:build IMAGE=app-versioned -- -var "app_version=2.0"
 
-# 3. -var-file
-packer build -var-file="variables.pkrvars.hcl" .
+# 3. -var-file (caminho relativo a packer/, que é onde o Taskfile roda o packer)
+task packer:build IMAGE=app-versioned -- -var-file="vars/app-versioned.pkrvars.hcl"
 
-# 4. env var PKR_VAR_*
+# 4. variável de ambiente PKR_VAR_*
 $env:PKR_VAR_app_version = "3.0"
-packer build .
+task packer:build IMAGE=app-versioned
 Remove-Item Env:\PKR_VAR_app_version
 
-packer inspect .
 docker images meuapp
 ```
-Confirme no `docker images` que existem tags `1.0`, `2.0`, `1.1` e `3.0`.
+Confirme que existem `meuapp:1.0`, `meuapp:2.0`, `meuapp:1.1` e `meuapp:3.0`.
 
 ## Quebre isto
-1. Declare uma nova `variable "must_have" { type = string }` **sem** `default` e sem
-   passar valor em lugar nenhum. Rode `packer build .` e leia o erro de validação.
-2. Marque-a `sensitive = true`, passe um valor e veja como ela some do output do build
-   (mas não do `packer inspect .` — objetivo é aprender a diferença).
-3. Remova a variável de teste antes de seguir.
+1. Numa cópia temporária do template (não edite o do repo), declare uma nova
+   `variable "must_have" { type = string }` **sem** `default` e sem passar
+   valor em lugar nenhum. Rode `packer build .` sobre essa cópia e leia:
+   ```
+   Error: Unset variable "must_have"
+   A used variable must be set or have a default value; ...
+   ```
+2. Marque-a `sensitive = true`, passe um valor com `-var "must_have=segredo123"`.
+   O valor **não aparece em nenhum lugar** do output do build — nem em
+   `packer inspect .`, que mostra `var.must_have: "<unknown>"` em vez do valor
+   real. `sensitive` mascara nos dois.
 
 ## Critério de conclusão
-`packer fmt .` e `packer validate .` limpos, e o mesmo template produz 4 imagens
-diferentes só mudando a forma de passar `app_version`.
+`task packer:validate IMAGE=app-versioned` e `packer fmt` limpos, e o mesmo
+template produz 4 imagens diferentes só mudando a forma de passar `app_version`.
 
 ## Notas

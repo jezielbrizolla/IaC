@@ -22,14 +22,22 @@ image do bloco 4 vai fazer exatamente isso.
 server {
     listen 80;
     server_name _;
+
     location / {
+        default_type text/plain;
         return 200 'packer provisioner lab ok\n';
-        add_header Content-Type text/plain;
     }
 }
 ```
 Config mínima que responde texto fixo — serve pra provar que foi *essa* config
 que entrou na imagem, e não a padrão do pacote.
+
+> `default_type` **define** o Content-Type da resposta. `add_header
+> Content-Type ...` seria diferente: `add_header` **acrescenta** um header, não
+> substitui — o resultado viraria `application/octet-stream,text/plain` (o
+> `return` já manda `octet-stream` por padrão), e o cliente trataria o corpo
+> como binário. Foi exatamente esse bug que apareceu na primeira versão deste
+> lab — ver Notas.
 
 ## O script de provisionamento
 `packer/scripts/install-nginx.sh`:
@@ -93,3 +101,19 @@ de a cada boot. Um `provisioner` do Terraform fazendo esse trabalho é o
 anti-padrão clássico — o Terraform provisiona infra, não configura SO.
 
 ## Notas
+
+- **O "Quebre isto" não deu o erro que eu esperava.** Invertendo `file` antes
+  de `shell`, achei que ia ver algo tipo "no such file or directory". Veio
+  `... must be a directory` — porque o `provisioner "file"` do Docker não cria
+  o caminho de destino sozinho; se `/etc/nginx/sites-available/` ainda não
+  existe (porque o nginx não foi instalado), ele recusa de um jeito ambíguo em
+  vez de simplesmente reclamar que a pasta não existe.
+- **A config do nginx tinha um bug real na primeira versão** (`add_header
+  Content-Type` em vez de `default_type`) — `add_header` acrescenta, não
+  substitui, e a resposta saía como binário em vez de texto. Só apareceu
+  porque o script de teste (`packer:test`) checava o corpo da resposta como
+  string e quebrou com um erro completamente diferente (`.Content` vindo como
+  `Byte[]`). Foi um bug puxando outro.
+- **`task` só sobe diretórios procurando o `Taskfile.yml`, nunca desce.** De
+  dentro de `IaC/` (a pasta *acima* de `labs/`) ele não acha nada — sempre
+  preciso estar dentro de `labs/` ou de algum subdiretório dela.
