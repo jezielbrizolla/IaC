@@ -1,9 +1,11 @@
 # Checklist — 05-packer-manifest
 
-- [ ] Adicionar `post-processor "manifest"` ao template
-- [ ] `packer build .` gerou `manifest.json`
-- [ ] Rodei 2+ builds e confirmei que `builds[]` acumula entradas
-- [ ] Identifiquei os campos: `name`, `artifact_id`, `custom_data`, `last_run_uuid`
-- [ ] Quebrei: 3 builds seguidos, decidi a regra pra pegar "a imagem certa"
-- [ ] Regra escolhida anotada nas Notas do README
-- [ ] Sei explicar por que este JSON é a ponte pro Terraform
+Artefato: `packer/templates/golden-manifest.pkr.hcl`
+
+- [x] Adicionar `post-processor "manifest"` ao template
+- [x] `task packer:build` / `packer build` gerou `manifest.json`
+- [x] Rodei 2+ builds e confirmei que `builds[]` acumula entradas
+- [x] Identifiquei os campos: `name`, `artifact_id`, `packer_run_uuid`, `custom_data`, `last_run_uuid`
+- [x] Quebrei: 5 builds seguidos (1.0 a 5.0), decidi a regra pra pegar "a imagem certa"
+- [x] Regra escolhida anotada nas Notas do README (`last_run_uuid` == `packer_run_uuid`, não posição do array)
+- [x] Sei explicar por que este JSON é a ponte pro Terraform

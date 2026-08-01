@@ -15,6 +15,7 @@ override.tf.json
 # Packer
 packer_cache/
 manifest.json
+manifest.json.lock
 # vars de configuracao SAO versionados (fazem parte da definicao da imagem).
 # Segredo nunca vai em arquivo: use PKR_VAR_* / Vault. Só o padrao *.secret.pkrvars.hcl
 # fica de fora, como valvula de escape para teste local.
