@@ -11,8 +11,8 @@
 **~2h · essencial · replica a stack do KOB**
 
 ## Objetivo
-Subir HashiCorp Vault e PostgreSQL no cluster local — a mesma stack que
-você gerencia no KOB. Vault injeta segredos no pod do app sem hardcode.
+Subir HashiCorp Vault e PostgreSQL no cluster local — a mesma stack que o teu
+time roda no KOB. Vault injeta segredos no pod do app sem hardcode.
 
 ## Pré-requisitos
 - Cluster do lab 19 rodando
@@ -142,7 +142,7 @@ kubectl -n lab21-app exec -it deployment/app -c app -- cat /vault/secrets/db
 ```
 O arquivo contém as credenciais do Postgres — mas elas **não estão** no
 YAML de deployment, nem em ConfigMap, nem em Secret do Kubernetes. Vieram
-do Vault via sidecar. Esse é o padrão que você já usa no KOB.
+do Vault via sidecar. Esse é o padrão que o teu time já usa no KOB.
 
 ## Quebre isto
 1. **Mude a policy do Vault para negar acesso** (`capabilities = ["deny"]`).
