@@ -60,3 +60,12 @@ repo real na raiz (`packer/`, `terraform/`, `ansible/`, `k8s/`).
    acabou de escrever.
 6. **Primeira vez manual, depois automatiza.** Só faz sentido criar task/script
    para um passo depois de tê-lo feito na mão e entendido.
+7. **A raiz `labs/` é a âncora — todo comando é dado a partir dela.** Todos os
+   READMEs documentam comandos assumindo esse diretório. Caminho relativo dado
+   de outro lugar quebra ou cria pasta aninhada por engano (já aconteceu com o
+   `setup.sh` do Lab 02 e quase com o `main.tf` do Lab 06).
+
+   Comandos `task` são a exceção segura: o Task sobe procurando o `Taskfile.yml`
+   e executa a partir da pasta dele, então funcionam de qualquer subdiretório.
+   Os comandos crus (`Set-Content`, `packer build`, `terraform -chdir`) é que
+   dependem do cwd — nesses, confirme com `Get-Location` antes.
