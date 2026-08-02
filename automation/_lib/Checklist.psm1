@@ -1,11 +1,15 @@
-# Marca itens do CHECKLIST.md do 00-setup como [x] com base no que o
+# Marca itens da secao "### 00-setup" do TODO.md como [x] com base no que o
 # orquestrador validou de fato nesta execucao. Nunca desmarca um item ja
-# marcado manualmente.
+# marcado manualmente. So opera DENTRO da secao 00-setup (entre o header
+# "### 00-setup" e o proximo "## " ou "### ") - o TODO.md e compartilhado
+# por todos os labs, e alguns patterns (ex: "origin") sao genericos demais
+# pra aplicar no arquivo inteiro com seguranca.
 
 function Update-SetupChecklist {
     param(
         [Parameter(Mandatory)][string]$ChecklistPath,
-        [Parameter(Mandatory)]$Results
+        [Parameter(Mandatory)]$Results,
+        [string]$SectionHeader = "### 00-setup"
     )
 
     if (-not (Test-Path $ChecklistPath)) {
@@ -36,10 +40,21 @@ function Update-SetupChecklist {
     $lines = Get-Content -Path $ChecklistPath -Encoding UTF8
     $changed = $false
     $newLines = New-Object System.Collections.Generic.List[string]
+    $inSection = $false
 
     foreach ($line in $lines) {
         $updatedLine = $line
-        if ($line -match '^\-\s\[\s\]') {
+
+        if ($line.Trim() -eq $SectionHeader) {
+            $inSection = $true
+            $newLines.Add($updatedLine)
+            continue
+        }
+        if ($inSection -and $line -match '^(##\s|###\s)') {
+            $inSection = $false
+        }
+
+        if ($inSection -and $line -match '^\-\s\[\s\]') {
             foreach ($m in $map) {
                 if ($line -match $m.Pattern) {
                     $r = $Results | Where-Object { $_.Name -eq $m.Result }

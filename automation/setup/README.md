@@ -27,10 +27,10 @@ powershell -ExecutionPolicy Bypass -File automation/setup/setup.ps1 -Push
 
 | Flag | O que faz |
 |---|---|
-| (nenhuma) | Roda todos os passos, atualiza o `CHECKLIST.md`, **nunca** commita ou dá push sozinho |
+| (nenhuma) | Roda todos os passos, atualiza a seção `### 00-setup` do `TODO.md`, **nunca** commita ou dá push sozinho |
 | `-Push` | Ao final, se o working tree estiver limpo, oferece rodar `git push -u origin main` (pede confirmação `s/N`) |
 | `-Unattended` | Não faz nenhuma pergunta interativa — combine com `-Push` para push sem confirmação manual (útil em automação local) |
-| `-SkipChecklistUpdate` | Não mexe no `00-setup/CHECKLIST.md` |
+| `-SkipChecklistUpdate` | Não mexe no `TODO.md` |
 
 Exemplos:
 ```powershell
@@ -78,13 +78,14 @@ mostra a mesma informação colorida por nível:
 Código de saída: `0` se tudo OK ou só WARN, `1` se algo FAIL — útil se você
 quiser encadear isso num pipeline mais tarde.
 
-## Atualização do CHECKLIST.md
+## Atualização do TODO.md
 
-Depois de rodar, o script marca `[x]` em `00-setup/CHECKLIST.md` nos itens
-que ele conseguiu validar de verdade nesta execução (nunca desmarca algo já
-marcado). O que precisa de ação manual (abrir o Docker Desktop, instalar
-WSL, cadastrar chave SSH) fica como `WARN` no console/log e continua
-`[ ]` até você resolver e rodar de novo.
+Depois de rodar, o script marca `[x]` na seção `### 00-setup` do `TODO.md`
+(raiz do repo) nos itens que ele conseguiu validar de verdade nesta execução
+(nunca desmarca algo já marcado, e nunca toca fora dessa seção — o resto do
+arquivo é dos outros labs). O que precisa de ação manual (abrir o Docker
+Desktop, instalar WSL, cadastrar chave SSH) fica como `WARN` no console/log e
+continua `[ ]` até você resolver e rodar de novo.
 
 ## Segurança / o que ele NÃO faz
 

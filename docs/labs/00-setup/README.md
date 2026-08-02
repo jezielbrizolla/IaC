@@ -46,7 +46,9 @@ mais a instalação do `task`.
    **novo** e confirme com `task --version`.
 
 ## Checklist
-Veja `CHECKLIST.md` em `labs/00-setup/` para acompanhar o progresso do setup.
+Veja a seção `### 00-setup` em [`TODO.md`](../../../TODO.md) (raiz do repo)
+para acompanhar o progresso do setup — `task setup` marca os itens
+automaticamente conforme valida cada passo.
 Repositório remoto: https://github.com/jezielbrizolla/IaC
 
 ## Critério de conclusão

@@ -8,7 +8,7 @@ Uso:
   .\setup.ps1                 # roda todos os passos, nunca commita/pusha sozinho
   .\setup.ps1 -Push            # ao final, se working tree limpo, oferece git push
   .\setup.ps1 -Push -Unattended  # push sem perguntar (uso em automacao/CI local)
-  .\setup.ps1 -SkipChecklistUpdate  # nao mexe no CHECKLIST.md
+  .\setup.ps1 -SkipChecklistUpdate  # nao mexe no TODO.md
 #>
 [CmdletBinding()]
 param(
@@ -82,7 +82,7 @@ foreach ($r in $results) {
 }
 
 if (-not $SkipChecklistUpdate) {
-    $checklistPath = Join-Path $root "..\..\docs\labs\00-setup\CHECKLIST.md"
+    $checklistPath = Join-Path $root "..\..\TODO.md"
     Update-SetupChecklist -ChecklistPath $checklistPath -Results $results
 }
 

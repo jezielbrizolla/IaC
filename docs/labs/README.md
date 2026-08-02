@@ -1,10 +1,13 @@
 # Labs — material didático
 
-Cada pasta aqui tem `README.md` (o plano do lab) e `CHECKLIST.md` (o progresso).
-**Nenhum código mora aqui** — o código que os labs produzem vai para o shape de
-repo real na raiz (`packer/`, `terraform/`, `ansible/`, `k8s/`).
+Cada pasta aqui tem um `README.md` (o plano do lab — objetivo, código,
+"Quebre isto"). **Nenhum código mora aqui** — o código que os labs produzem
+vai para o shape de repo real na raiz (`packer/`, `terraform/`, `ansible/`,
+`k8s/`).
 
-`task status` mostra o progresso de todos os checklists de uma vez.
+O progresso de **todos** os labs mora num arquivo só: [`TODO.md`](../../TODO.md),
+na raiz do repo. Mantenha ele aberto no VS Code enquanto trabalha — `task status`
+imprime o mesmo resumo no terminal, lendo direto desse arquivo.
 
 ## Mapa lab → artefato
 

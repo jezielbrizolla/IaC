@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 <#
-Le todos os CHECKLIST.md em docs/labs/ e mostra o progresso por lab.
+Le TODO.md e mostra o progresso por lab (secoes "### NN-nome").
 Read-only: nao altera nenhum arquivo.
 #>
 [CmdletBinding()]
@@ -8,10 +8,10 @@ param()
 
 $ErrorActionPreference = "Continue"
 $root = Split-Path $PSScriptRoot -Parent
-$labsDir = Join-Path $root "docs\labs"
+$todoPath = Join-Path $root "TODO.md"
 
-if (-not (Test-Path $labsDir)) {
-    Write-Host "docs/labs nao encontrado em $labsDir" -ForegroundColor Red
+if (-not (Test-Path $todoPath)) {
+    Write-Host "TODO.md nao encontrado em $todoPath" -ForegroundColor Red
     exit 1
 }
 
@@ -22,31 +22,51 @@ Write-Host ""
 Write-Host " LAB                                 PROGRESSO" -ForegroundColor Cyan
 Write-Host " ---------------------------------------------------------------" -ForegroundColor DarkGray
 
-Get-ChildItem -Path $labsDir -Directory | Sort-Object Name | ForEach-Object {
-    $checklist = Join-Path $_.FullName "CHECKLIST.md"
-    if (-not (Test-Path $checklist)) { return }
+$lines = Get-Content -Path $todoPath -Encoding UTF8
+$currentLab = $null
+$done = 0
+$items = 0
 
-    $lines = Get-Content $checklist
-    $done  = @($lines | Where-Object { $_ -match '^\-\s\[x\]' }).Count
-    $open  = @($lines | Where-Object { $_ -match '^\-\s\[\s\]' }).Count
-    $items = $done + $open
-    if ($items -eq 0) { return }
+function Write-LabRow {
+    param([string]$Name, [int]$Done, [int]$Items)
 
-    $totalDone  += $done
-    $totalItems += $items
+    if ($Items -eq 0) { return }
+    $script:totalDone += $Done
+    $script:totalItems += $Items
 
-    $pct = [int](($done / $items) * 100)
+    $pct = [int](($Done / $Items) * 100)
     $barLen = 20
-    $filled = [int](($done / $items) * $barLen)
+    $filled = [int](($Done / $Items) * $barLen)
     $bar = ("#" * $filled).PadRight($barLen, ".")
 
     $color = "Yellow"
     if ($pct -eq 100) { $color = "Green" }
     elseif ($pct -eq 0) { $color = "DarkGray" }
 
-    $name = $_.Name.PadRight(34).Substring(0, 34)
-    Write-Host (" {0} [{1}] {2,3}%  ({3}/{4})" -f $name, $bar, $pct, $done, $items) -ForegroundColor $color
+    $label = $Name.PadRight(34)
+    if ($label.Length -gt 34) { $label = $label.Substring(0, 34) }
+    Write-Host (" {0} [{1}] {2,3}%  ({3}/{4})" -f $label, $bar, $pct, $Done, $Items) -ForegroundColor $color
 }
+
+foreach ($line in $lines) {
+    if ($line -match '^###\s+(.+)$') {
+        # fecha o lab anterior antes de abrir o novo
+        if ($currentLab) { Write-LabRow -Name $currentLab -Done $done -Items $items }
+        $currentLab = $Matches[1].Trim()
+        $done = 0
+        $items = 0
+        continue
+    }
+    if ($line -match '^##\s') {
+        # saiu de qualquer secao de lab (ex: entrou noutro Bloco sem ### ainda)
+        if ($currentLab) { Write-LabRow -Name $currentLab -Done $done -Items $items }
+        $currentLab = $null
+        continue
+    }
+    if ($currentLab -and $line -match '^\-\s\[x\]') { $items++; $done++ }
+    elseif ($currentLab -and $line -match '^\-\s\[\s\]') { $items++ }
+}
+if ($currentLab) { Write-LabRow -Name $currentLab -Done $done -Items $items }
 
 Write-Host " ---------------------------------------------------------------" -ForegroundColor DarkGray
 if ($totalItems -gt 0) {
