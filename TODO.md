@@ -1,38 +1,128 @@
-# TODO — IaC Track 0 (Blocos 0–5)
+# TODO — IaC Track 0
 
-> Arquivo único de progresso. Substitui os 23 `CHECKLIST.md` individuais que
-> existiam em `docs/labs/*/` (histórico deles preservado no git). Mantenha
-> aberto no VS Code; o chat segue este arquivo em vez de espalhar checklist
-> pela conversa.
->
-> `task setup` atualiza automaticamente a seção **Bloco 0** ao rodar.
-> `task status` lê este arquivo e imprime um resumo no terminal.
-> O resto é marcado manualmente conforme os labs avançam.
+Progresso e navegação de todos os labs, num arquivo só. Substitui os 23
+`CHECKLIST.md` que existiam em `docs/labs/*/` (histórico preservado no git).
+
+## Como usar este arquivo
+
+**Se você está começando do zero:** siga a ordem numérica. Cada lab tem um
+`README.md` próprio em [`docs/labs/`](docs/labs/) com o objetivo, o código
+completo, o passo "Quebre isto" e as Notas. Este arquivo é o *tracker* — ele
+diz onde você está e o que falta, não como fazer.
+
+**Se você quer revisar um conceito específico:** use o [índice de
+conceitos](#índice-de-conceitos) abaixo para achar o lab certo, e vá direto
+ao `README.md` dele.
+
+**Se você está retomando:** veja [Agora](#agora) e [Backlog](#backlog).
+
+Comandos úteis (da raiz `labs/`):
+```powershell
+task status    # imprime este progresso no terminal
+task setup     # prepara a máquina e marca a seção 00-setup sozinho
+task           # lista tudo que dá pra fazer
+```
+
+Convenções do repo — nomes de artefato, onde o código mora, por que o
+`.terraform.lock.hcl` é versionado — estão no [README raiz](README.md).
+
+---
+
+## Índice de conceitos
+
+Onde cada assunto é ensinado, e qual pergunta ele responde.
+
+#### Packer
+
+| Conceito | Lab | Responde |
+|---|---|---|
+| `required_plugins` / `packer init` | [01](docs/labs/01-packer-primeiro-build/) | Por que preciso rodar `init` antes? |
+| `commit = true` | [01](docs/labs/01-packer-primeiro-build/) | Por que a imagem sai `<untagged>`? |
+| `provisioner "shell"` / `"file"` | [02](docs/labs/02-packer-provisioners/) | Como instalo e configuro coisa dentro da imagem? |
+| Ordem dos provisioners | [02](docs/labs/02-packer-provisioners/) | Por que inverter a ordem quebra o build? |
+| `script` externo vs `inline` | [02](docs/labs/02-packer-provisioners/) | Quando extrair para arquivo separado? |
+| `variable` / `locals` | [03](docs/labs/03-packer-variaveis/) | Como parametrizo sem editar o template? |
+| Precedência de variáveis (Packer) | [03](docs/labs/03-packer-variaveis/) | `-var` vs `-var-file` vs `PKR_VAR_*` |
+| `sensitive = true` | [03](docs/labs/03-packer-variaveis/) | Como escondo segredo do output? |
+| `post-processor "docker-tag"` | [03](docs/labs/03-packer-variaveis/) | Como dou nome/tag à imagem? |
+| Multi-source + `only` / `except` | [04](docs/labs/04-packer-multi-source/) | Uma definição, várias bases (= AWS + Azure) |
+| `${source.name}` | [04](docs/labs/04-packer-multi-source/) | Como diferencio o output por source? |
+| `post-processor "manifest"` | [05](docs/labs/05-packer-manifest/) | Como o Terraform descobre qual imagem usar? |
+
+#### Terraform
+
+| Conceito | Lab | Responde |
+|---|---|---|
+| `init` / `plan` / `apply` / `destroy` | [06](docs/labs/06-tf-workflow-core/) | O ciclo básico |
+| **State** — o mapa | [06](docs/labs/06-tf-workflow-core/) | O que é o `.tfstate` e por que perder ele dói? |
+| `variable` / `output` / `validation` | [07](docs/labs/07-tf-variaveis-outputs/) | A interface do stack |
+| Precedência de variáveis (Terraform) | [07](docs/labs/07-tf-variaveis-outputs/) | ⚠️ **Diferente do Packer** — `tfvars` vence `TF_VAR_*` |
+| Dependência implícita vs `depends_on` | [08](docs/labs/08-tf-dependencias/) | Quem é criado primeiro, e por quê? |
+| `count` vs `for_each` | [09](docs/labs/09-tf-count-foreach-lifecycle/) | Por que remover do meio da lista destrói o item errado? |
+| `lifecycle` | [09](docs/labs/09-tf-count-foreach-lifecycle/) | `prevent_destroy`, `create_before_destroy`, `ignore_changes` |
+| **Módulos** | [10](docs/labs/10-tf-modulos/) | A unidade reutilizável — a base do framework de tenant |
+| `import` / drift / `moved` / `state rm` | [11](docs/labs/11-tf-state/) | Como opero o state sem destruir nada? |
+| Packer → Terraform | [12](docs/labs/12-capstone-ponte/) | O pipeline de duas etapas, ponta a ponta |
+| Workspaces vs diretórios | [13](docs/labs/13-capstone-ambientes/) | Como separo prod de dev *de verdade*? |
+| Pipeline / empacotamento | [14](docs/labs/14-capstone-empacotar/) | Como rodo tudo com um comando? |
+
+#### Windows Server / Hyper-V
+
+| Conceito | Lab | Responde |
+|---|---|---|
+| `hyperv-iso` + `Autounattend.xml` | [15](docs/labs/15-packer-hyperv-windows/) | Como instalo Windows sem clicar em nada? |
+| Ansible via WinRM | [16](docs/labs/16-ansible-windows-winrm/) | Como configuro Windows por código, idempotente? |
+| Golden image + Sysprep | [17](docs/labs/17-golden-image-pipeline/) | Por que Sysprep evita SID duplicado? |
+| Terraform + provider Hyper-V | [18](docs/labs/18-tf-hyperv-provider/) | Como instancio N VMs a partir de uma golden image? |
+
+#### Kubernetes
+
+| Conceito | Lab | Responde |
+|---|---|---|
+| Cluster com `kubeadm` | [19](docs/labs/19-k8s-cluster-hyperv/) | Como subo um cluster do zero? |
+| Quota + NetworkPolicy + Ingress | [20](docs/labs/20-k8s-workload-ingress/) | Governança dentro de um namespace |
+| Vault + PostgreSQL | [21](docs/labs/21-k8s-vault-postgres/) | Como injeto segredo sem hardcode em YAML? |
+| Terraform + provider Kubernetes | [22](docs/labs/22-tf-kubernetes-provider/) | Namespace por tenant via mapa, com governança |
+
+---
+
+## Dependências entre labs
+
+A maioria é independente, mas alguns exigem o resultado de outro:
+
+| Lab | Precisa de | Por quê |
+|---|---|---|
+| 07 | 06 | Expande o **mesmo** stack (`web-basic`), não cria outro |
+| 12 | 02, 05 | Usa provisioners (02) e o `manifest.json` (05) |
+| 16 | 15 | Precisa da VM Windows rodando |
+| 17 | 15, 16 | Reusa o `Autounattend.xml` e o playbook |
+| 18 | 17 | Consome a golden image (VHDX) |
+| 20, 21, 22 | 19 | Precisam do cluster de pé |
+
+---
 
 ## Agora
 
-**Próximo: Lab 08 — Dependências e o grafo** (Bloco 2, Terraform)
-Ainda não iniciado. Stack novo: `terraform/stacks/web-network/`.
+**Próximo: Lab 08 — Dependências e o grafo** (Bloco 2).
+Stack novo: `terraform/stacks/web-network/`. Ainda não iniciado.
 
-## Backlog / Pendências
+## Backlog
 
-Itens que foram ficando pra depois durante a sessão, não presos a um lab
-específico:
+Pendências que não pertencem a um lab específico:
 
 - [ ] Adicionar tasks `tf:init` / `tf:plan` / `tf:apply` / `tf:destroy` ao
-      `Taskfile.yml` — regra era "só depois de fazer na mão pelo menos uma
-      vez"; já foi feito nos Labs 06/07, pode adicionar agora
-- [ ] Decidir Hyper-V local (`hyperv-iso`) vs Azure (`azure-arm`) quando
-      chegar no Bloco 4 — créditos Azure disponíveis (US$100)
+      `Taskfile.yml` — a regra era "só depois de fazer na mão"; já foi feito
+      nos Labs 06/07, pode adicionar
+- [ ] Decidir Hyper-V local (`hyperv-iso`) vs Azure (`azure-arm`) no Bloco 4 —
+      há US$100 de créditos Azure disponíveis
 - [ ] Confirmar se a vaga é híbrida (on-prem + cloud) ou só nuvem pública —
-      muda se vale investir em `vsphere`/`dell-redfish`
+      muda se vale investir em `vsphere` / `dell-redfish`
 - [ ] Exercício de consolidação adiado: refazer um lab do zero sem consultar
-      (decisão do JZ: mapa completo primeiro, consolidar depois)
 - [ ] Drift detection agendado no CI (`terraform plan -detailed-exitcode`) —
-      depois de fechar o Bloco 2
-- [ ] `tfsec`/`checkov` no CI — depois de fechar o Bloco 2
-- [ ] Gaps do "conceito completo" fora do escopo direto da vaga: baremetal→SO
-      (Redfish/PXE/MAAS), VMware/vSphere, GitOps (só mencionado no Lab 22)
+      depois do Bloco 2
+- [ ] `tfsec` / `checkov` no CI — depois do Bloco 2
+- [ ] Gaps do "conceito completo" fora do escopo da vaga: baremetal→SO
+      (Redfish / PXE / MAAS), VMware / vSphere, GitOps (só mencionado no Lab 22)
 
 ## Progresso
 
@@ -40,17 +130,28 @@ específico:
 |---|---|---|
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
-| 2 — Terraform | 06–11 | 🔶 26/75 |
-| 3 — Capstone | 12–14 | ⬜ 0/37 |
-| 4 — Windows/Hyper-V | 15–18 | ⬜ 0/45 |
-| 5 — Kubernetes | 19–22 | ⬜ 0/54 |
-| **Total** | | **91/276 (33%)** |
+| 2 — Terraform | 06–11 | 🔶 26/72 |
+| 3 — Capstone | 12–14 | ⬜ 0/36 |
+| 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
+| 5 — Kubernetes | 19–22 | ⬜ 0/53 |
+| **Total** | | **92/271 (34%)** |
+
+> Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
+> o script é a fonte da verdade — a tabela é conveniência.
 
 ---
 
-## Bloco 0 — Setup
+## Bloco 0 — Setup da estação
+
+Preparar a máquina: toolchain, git, SSH. É o único bloco inteiramente manual
+do repo — e justamente por isso ganhou automação própria
+([`automation/setup/`](automation/setup/), rodável com `task setup`).
 
 ### 00-setup
+
+**Ensina:** o ambiente mínimo para todos os outros labs.
+**Automação:** `task setup` valida cada passo e marca os itens abaixo sozinho.
+
 - [x] Instalar Terraform (`winget install Hashicorp.Terraform`)
 - [x] Instalar Packer (`winget install Hashicorp.Packer`)
 - [x] Instalar Docker Desktop com backend WSL2
@@ -62,7 +163,7 @@ específico:
 - [x] Validar `ssh -T git@github.com` no Windows/Git Bash → autenticou como `jezielbrizolla`
 - [x] Validar `ssh -T git@github.com` dentro do WSL Ubuntu → autenticou como `jezielbrizolla`
 - [x] Criar repositório remoto no GitHub — https://github.com/jezielbrizolla/IaC
-- [x] Adicionar `origin` (SSH) apontando para `git@github.com:jezielbrizolla/IaC.git`
+- [x] Adicionar `origin` (SSH) em `labs/` apontando para `git@github.com:jezielbrizolla/IaC.git`
 - [x] Fazer commit inicial em `labs/`
 - [x] Enviar o primeiro push para `origin main`
 - [x] Validar `terraform -version` → 1.15.8
@@ -71,323 +172,501 @@ específico:
 - [x] Instalar go-task (`winget install Task.Task`)
 - [x] Validar `task --version` → 3.52.0
 
+**Correção aplicada durante o lab:** `wsl-ssh-setup.sh` — `chmod 600 ~/.ssh/config`
+quebrava com `set -e` se o arquivo ainda não existisse. Agora só roda o `chmod`
+se o arquivo existir (idem para a chave privada `ssh-iac`, que também precisa
+estar em 600).
+
+---
+
 ## Bloco 1 — Packer
 
+Construir imagens como código. O alvo aqui é Docker (rápido, gratuito, local),
+mas a estrutura do HCL é a mesma que se usa com `amazon-ebs`, `azure-arm` ou
+`vsphere-iso` — só muda o `source`.
+
 ### 01-packer-primeiro-build
-Artefato: `packer/templates/ubuntu-base.pkr.hcl`
+
+**Ensina:** o esqueleto mínimo de um template — os três blocos (`packer`,
+`source`, `build`) e por que `packer init` existe.
+**Artefato:** `packer/templates/ubuntu-base.pkr.hcl`
+
 - [x] Escrever o template com `required_plugins` + `source "docker"` + `build`
 - [x] `task packer:init` — plugin baixado
 - [x] `packer fmt` aplicado
 - [x] `task packer:validate IMAGE=ubuntu-base` sem erros
 - [x] `task packer:build IMAGE=ubuntu-base` produziu uma imagem
-- [x] `docker image ls --all --filter "dangling=true"` mostra a imagem (`<untagged>` — normal, o Lab 04 fecha isso)
-- [x] Quebrei: comentei `required_plugins` + isolei o cache de plugins, li o erro real ("unknown by Packer")
+- [x] `docker image ls --all --filter "dangling=true"` mostra a imagem (aparece como `<untagged>` — normal, ainda sem tag; o lab 04 fecha isso)
+- [x] Quebrei: comentei `required_plugins` **e** isolei o cache de plugins, rodei o build e li o erro real ("The source docker is unknown by Packer")
 - [x] Sei explicar em 1 frase o que `commit = true` faz
 - [x] Notas preenchidas no README
 
 ### 02-packer-provisioners
-Artefatos: `packer/templates/ubuntu-nginx.pkr.hcl`, `packer/scripts/install-nginx.sh`, `packer/files/nginx/default.conf`
+
+**Ensina:** fazer a imagem *fazer algo* — instalar e configurar software no
+build time, e por que a ordem dos provisioners é a ordem de execução (não há
+grafo de dependência como no Terraform).
+**Artefatos:**
+- `packer/templates/ubuntu-nginx.pkr.hcl`
+- `packer/scripts/install-nginx.sh`
+- `packer/files/nginx/default.conf`
+
 - [x] Escrever a config do nginx
-- [x] Escrever o template com `provisioner "shell"` + `provisioner "file"`
+- [x] Escrever o template com `provisioner "shell" { inline = [...] }` + `provisioner "file"`
 - [x] `packer init` / `packer build` OK
 - [x] Container rodando e servindo a config própria
 - [x] Resposta HTTP retorna o texto de teste
 - [x] Container de teste removido
 - [x] Migrar `inline` → `script` externo
+      <br>_Nota: o script de refactor foi escrito por mim (JZ) — regex + here-string em
+      PowerShell — mas quem aterrissou o arquivo na estrutura nova foi o Claude,
+      durante a reestruturação do repo. O conceito (extrair para script reutilizável)
+      foi entendido; a execução final veio junto da migração._
 - [x] Rebuild com script externo funcionou igual
-- [x] Quebrei: inverti `file` antes de `shell`, li o erro ("must be a directory"), voltei ao normal
+- [x] Quebrei: inverti a ordem `file` antes de `shell`, li o erro ("must be a directory" — não o "no such file" esperado), voltei ao normal via `git checkout`
 - [x] Notas preenchidas no README
 
 ### 03-packer-variaveis
-Artefatos: `packer/templates/app-versioned.pkr.hcl`, `packer/vars/app-versioned.pkrvars.hcl`
+
+**Ensina:** parametrizar — o mesmo template produzindo imagens diferentes sem
+editar o arquivo, e as quatro formas de passar valor.
+**Artefatos:**
+- `packer/templates/app-versioned.pkr.hcl`
+- `packer/vars/app-versioned.pkrvars.hcl`
+
 - [x] Escrever o template com `variable`, `locals`, `post-processor "docker-tag"`
 - [x] Escrever `packer/vars/app-versioned.pkrvars.hcl`
 - [x] Build com default (`app_version=1.0`)
 - [x] Build com `-var "app_version=2.0"`
-- [x] Build com `-var-file` (1.1)
+- [x] Build com `-var-file="vars/app-versioned.pkrvars.hcl"` (1.1)
 - [x] Build com `PKR_VAR_app_version` (3.0)
 - [x] `docker images meuapp` mostra as 4 tags
 - [x] `packer inspect .` rodado e entendido
-- [x] Quebrei: variável obrigatória sem valor → "Unset variable", numa cópia temporária
-- [x] Testei `sensitive = true` — não aparece nem no build nem no `inspect` (`<unknown>`)
+- [x] Quebrei: variável obrigatória sem default/valor → li o erro ("Unset variable"), numa cópia temporária, sem editar o template do repo
+- [x] Testei `sensitive = true` e confirmei que o valor não aparece nem no build nem no `packer inspect` (`<unknown>`)
 - [x] Notas preenchidas no README
 
 ### 04-packer-multi-source
-Artefato: `packer/templates/multi-base.pkr.hcl`
+
+**Ensina:** um `build`, vários `source` em paralelo, com provisioners
+condicionados por `only`/`except`. É exatamente o padrão que vira "mesma
+imagem para AWS e Azure" — só troca o tipo do `source`.
+**Artefato:** `packer/templates/multi-base.pkr.hcl`
+
 - [x] Escrever o template com dois `source` (ubuntu, alpine)
 - [x] Provisioners com `only = [...]` separados por source
 - [x] `post-processor "docker-tag"` usando `tags = ["${source.name}"]`
 - [x] `task packer:build IMAGE=multi-base` produziu as duas imagens num único comando
 - [x] `docker images multi-base` mostra `multi-base:ubuntu` e `multi-base:alpine`
-- [x] Quebrei: provisioner `apt-get` sem `only` → Alpine falhou (exit 127)
-- [x] Li o erro completo e identifiquei o source que falhou
+- [x] Quebrei: um provisioner `apt-get` só, sem `only`, vi o Alpine falhar ("apt-get: not found", exit 127)
+- [x] Li o erro completo e identifiquei em qual source falhou (docker.alpine)
 - [x] Voltei para os provisioners separados
 - [x] Notas preenchidas no README
 
 ### 05-packer-manifest
-Artefato: `packer/templates/golden-manifest.pkr.hcl`
+
+**Ensina:** registrar qual imagem foi produzida em formato legível por
+máquina. Este JSON é o **contrato entre Packer e Terraform** — o Lab 12 vai
+consumi-lo.
+**Artefato:** `packer/templates/golden-manifest.pkr.hcl`
+
 - [x] Adicionar `post-processor "manifest"` ao template
-- [x] Build gerou `manifest.json`
-- [x] Rodei 2+ builds, `builds[]` acumula entradas
-- [x] Identifiquei os campos: `name`, `artifact_id`, `packer_run_uuid`, `last_run_uuid`
-- [x] Quebrei: 5 builds seguidos, decidi a regra pra "imagem certa"
-- [x] Regra anotada nas Notas (`last_run_uuid == packer_run_uuid`, não posição do array)
+- [x] `task packer:build` / `packer build` gerou `manifest.json`
+- [x] Rodei 2+ builds e confirmei que `builds[]` acumula entradas
+- [x] Identifiquei os campos: `name`, `artifact_id`, `packer_run_uuid`, `custom_data`, `last_run_uuid`
+- [x] Quebrei: 5 builds seguidos (1.0 a 5.0), decidi a regra pra pegar "a imagem certa"
+- [x] Regra escolhida anotada nas Notas do README (`last_run_uuid` == `packer_run_uuid`, não posição do array)
 - [x] Sei explicar por que este JSON é a ponte pro Terraform
+
+---
 
 ## Bloco 2 — Terraform
 
+Provisionar infraestrutura. Mesma lógica do Packer para `init`/`fmt`/`validate`,
+mas com uma diferença central: o Terraform mantém **state** — um mapa entre o
+que você declarou e o que existe de verdade.
+
 ### 06-tf-workflow-core
-Artefato: `terraform/stacks/web-basic/main.tf`
+
+**Ensina:** o ciclo completo e, o mais importante, **o que é o state**. Drift,
+`import`, `moved` e "perdi o state" são todos consequência desse conceito.
+**Artefato:** `terraform/stacks/web-basic/main.tf`
+
 - [x] Escrever o stack com `terraform{}` + `provider "docker"` + `docker_image` + `docker_container`
-- [x] `init` OK — provider `kreuzwerker/docker v3.9.0`, lock file criado
-- [x] `fmt` / `validate` limpos
-- [x] `plan` revisado antes de aplicar (`2 to add`)
-- [x] `apply -auto-approve` OK
-- [x] `curl localhost:8080` retorna a página do nginx
-- [x] Li o `terraform.tfstate` — `resources`, `attributes`, `serial`, `lineage`
-- [x] Comparei o `id` do state com `docker inspect` — idênticos
-- [x] Quebrei: apaguei o state com o container no ar, plan quis recriar tudo
-- [x] Restaurei o backup — `plan` voltou a `No changes`
-- [x] `destroy -auto-approve` deixou `docker ps -a` limpo
+- [x] `terraform -chdir=... init` OK — provider `kreuzwerker/docker v3.9.0`, lock file criado
+- [x] `terraform -chdir=... fmt` / `validate` limpos
+- [x] `terraform -chdir=... plan` revisado antes de aplicar (`2 to add, 0 to change, 0 to destroy`)
+- [x] `terraform -chdir=... apply -auto-approve` OK
+- [x] `curl localhost:8080` retorna a página do nginx (StatusCode 200)
+- [x] Li o `terraform.tfstate` e identifiquei `resources`, `attributes`, `serial`, `lineage`
+- [x] Comparei o `id` do state com `docker inspect lab06-web` — idênticos
+- [x] Quebrei: apaguei o state com o container no ar, vi o plan querer recriar tudo (`2 to add`)
+- [x] Restaurei o backup do state — `plan` voltou a `No changes`
+- [x] `terraform destroy -auto-approve` deixou `docker ps -a` limpo
 - [x] Notas preenchidas no README
 
 ### 07-tf-variaveis-outputs
-Artefato: `terraform/stacks/web-basic/` (expande o Lab 06)
-- [x] Criar `variables.tf` com `container_name`, `external_port` (`validation`), `labels`
-- [x] Modificar `main.tf`: `locals.full_name`, `var.external_port`
+
+**Ensina:** transformar um stack fixo em parametrizável. Primeiro passo
+concreto rumo a "um tenant = mesma definição, valores diferentes".
+**Artefato:** `terraform/stacks/web-basic/` (expande o stack do Lab 06)
+**Depende de:** Lab 06
+
+- [x] Criar `variables.tf` com `container_name`, `external_port` (com `validation`), `labels`
+- [x] Modificar `main.tf`: `locals.full_name` no `name`, `var.external_port` na porta
 - [x] Criar `outputs.tf` com `url` e `container_id`
 - [x] Criar `terraform.tfvars` com `external_port = 8081`
-- [x] Apply com `terraform.tfvars` (8081) — destroy+create pela mudança de nome
-- [x] Apply com `-var` (8082) — venceu o tfvars
-- [x] Apply com `TF_VAR_external_port` (8083, sem tfvars no caminho) — env var venceu
+- [x] Apply usando `terraform.tfvars` (8081) — destroy+create confirmado pela mudança de nome (`lab06-web` → `web-lab`)
+- [x] Apply sobrescrevendo com `-var` (8082) — `-var` venceu o `tfvars`, como esperado
+- [x] Apply com `TF_VAR_external_port` (8083) sem `terraform.tfvars` no caminho — env var venceu de verdade
 - [x] `terraform output` mostrando `url` e `container_id`
 - [x] Quebrei: `external_port=80`, li a mensagem de validação
-- [x] Notei diferença create vs replace na validação
-- [x] Reescrevi a `error_message` com minhas palavras
+- [x] Notei a diferença de comportamento create vs replace na validação
+- [x] Reescrevi a `error_message` com minhas palavras ("A porta externa deve estar entre 1024 e 65535...")
 - [x] Sei explicar a diferença entre `variable` e `locals`
-- [x] `destroy` no final
+- [x] `terraform destroy` no final — `docker ps -a` confirmado limpo
 - [x] Notas preenchidas no README
 
 ### 08-tf-dependencias
-Stack sugerido: `terraform/stacks/web-network/`
+
+**Ensina:** como o Terraform decide a ordem de criação. Dependência implícita
+(por referência de atributo) é a regra; `depends_on` é a exceção.
+**Stack sugerido:** `terraform/stacks/web-network/`
+
 - [ ] Criar `main.tf` com `docker_network`, `docker_volume`, `docker_container` (referência implícita)
 - [ ] `terraform apply` OK
-- [ ] `terraform graph > graph.dot` gerado e lido
+- [ ] `terraform graph > graph.dot` gerado e lido (ou visualizado no Graphviz online)
 - [ ] Reescrevi usando `depends_on` explícito e comparei o grafo
 - [ ] Voltei para a versão com referência de atributo (a correta)
-- [ ] Conclusão implícito vs `depends_on` anotada nas Notas
-- [ ] Quebrei: `circular.tf` com dependência circular, li o erro `Cycle: ...`
+- [ ] Conclusão sobre implícito vs `depends_on` anotada nas Notas
+- [ ] Quebrei: criei `circular.tf` com dependência circular, li o erro `Cycle: ...`
 - [ ] Apaguei `circular.tf` depois do teste
 - [ ] Notas preenchidas no README
 
 ### 09-tf-count-foreach-lifecycle
+
+**Ensina:** identidade por **índice** (`count`) vs por **chave** (`for_each`) —
+e por que isso é a diferença entre um deploy tranquilo e um incidente. Mais os
+guardrails de `lifecycle`.
+**Stack sugerido:** `terraform/stacks/web-fleet/`
+
 - [ ] Criar `main.tf` com a imagem compartilhada
 - [ ] Criar `count.tf`, apply com 3 containers
-- [ ] Remover item do meio, `plan` (sem aplicar), ler o destroy/recreate indevido
-- [ ] `destroy` e trocar para `foreach.tf`
-- [ ] Apply com `for_each`, remover item, `plan` confirma que só ele é destruído
+- [ ] Remover `"b"` da lista, `plan` (sem aplicar) e ler o destroy/recreate indevido
+- [ ] `terraform destroy` e trocar para `foreach.tf`
+- [ ] Apply com `for_each`, remover `"b"`, `plan` e confirmar que só ele é destruído
 - [ ] Diferença count vs for_each anotada nas Notas
-- [ ] Testar `create_before_destroy = true`
+- [ ] Testar `create_before_destroy = true` e ver a ordem inverter no plan
 - [ ] Testar `ignore_changes = [image]`
-- [ ] Testar `prevent_destroy = true` e ler o erro (depois remover)
-- [ ] `destroy` limpo no final
+- [ ] Testar `prevent_destroy = true` e ler o erro do destroy (depois remover)
+- [ ] `terraform destroy` limpo no final
 - [ ] Notas preenchidas no README
-- [ ] **Conectar com objetivo:** esse mapa é o padrão de tenant — cada entrada = um tenant
+
+> **Conexão com o objetivo:** o mapa do `for_each` é o padrão de tenant —
+> cada entrada é um tenant, adicionar uma linha provisiona um novo, remover
+> destrói só aquele.
 
 ### 10-tf-modulos
+
+**Ensina:** empacotar e reutilizar. O módulo encapsula "o que um tenant
+precisa"; os inputs são o que muda por tenant; os outputs são o que o próximo
+estágio consome.
+**Artefatos:** `terraform/modules/webapp/` + `terraform/stacks/web-modular/`
+
 - [ ] Criar `modules/webapp/` com `main.tf`, `variables.tf`, `outputs.tf`
 - [ ] Criar `main.tf` (root) chamando `module "app_a"` e `module "app_b"`
-- [ ] Criar `outputs.tf` (root) expondo outputs dos módulos
-- [ ] `terraform init` OK (registrou os módulos)
+- [ ] Criar `outputs.tf` (root) expondo `module.app_a.url` / `module.app_b.url`
+- [ ] `terraform init` OK (baixou/registrou os módulos)
 - [ ] `terraform apply` — duas apps no ar
 - [ ] `curl localhost:8091` e `curl localhost:8092` respondem
 - [ ] Testei os 3 formatos de `source` (local aplicado, git/registry só lidos)
 - [ ] Quebrei: módulo novo sem `init` antes → erro
 - [ ] Testei: recurso novo dentro de módulo existente sem `init` → funciona
-- [ ] `destroy` limpo
+- [ ] `terraform destroy` limpo
 - [ ] Notas preenchidas no README
-- [ ] **Conectar com objetivo: este é *o* lab.** Módulo = unidade reutilizável = "o que um tenant precisa"
+
+> **Conexão com o objetivo: este é *o* lab.** Um tenant = uma chamada de
+> módulo com variáveis diferentes. Corrigir um guardrail no módulo corrige
+> em todos os tenants de uma vez.
 
 ### 11-tf-state
-- [ ] Base aplicada
+
+**Ensina:** operar o state sem destruir nada — trazer recurso existente para
+dentro (`import`), detectar drift, renomear sem recriar (`moved`), e remover
+do controle sem apagar (`state rm`).
+**Stack:** `terraform/stacks/` (vários exercícios)
+
+- [ ] Base aplicada (`docker_container.app`)
 - [ ] `terraform state list` / `state show` explorados
-- [ ] Container órfão criado fora do Terraform
-- [ ] `terraform import` rodou
-- [ ] Ajustei a config até `plan` ficar vazio
-- [ ] Testei bloco `import {}` + `-generate-config-out`
-- [ ] Drift: parei o container fora → `plan` detectou
-- [ ] Testei `-refresh-only`
-- [ ] Renomeei recurso, vi o plan querer destruir/criar
+- [ ] Container `orfao` criado fora do Terraform
+- [ ] `terraform import docker_container.orfao <id>` rodou
+- [ ] Ajustei a config até `terraform plan` ficar vazio para `orfao`
+- [ ] Testei também o bloco `import {}` + `-generate-config-out`
+- [ ] Drift: `docker stop orfao` → `terraform plan` detectou
+- [ ] Testei `-refresh-only` e entendi a diferença
+- [ ] Renomeei `app` → `web`, vi o plan querer destruir/criar
 - [ ] Resolvi com `terraform state mv`
-- [ ] Resolvi (de novo) com bloco `moved {}`
-- [ ] `state rm` — confirmei que o recurso continua vivo
-- [ ] Sei explicar `state rm` vs `destroy`
-- [ ] Limpeza final
+- [ ] Resolvi (de novo, do zero) com bloco `moved {}`
+- [ ] `terraform state rm docker_container.orfao` — confirmei que o container continua vivo
+- [ ] Sei explicar a diferença entre `state rm` e `destroy`
+- [ ] Limpeza final: `docker rm -f orfao` + `terraform destroy`
 - [ ] Notas preenchidas no README
-- [ ] **Conectar com objetivo:** state separado por tenant ou por stack? O que acontece se um corrompe?
+
+> **Conexão com o objetivo:** com N tenants, o state fica separado por tenant
+> ou por stack? O que acontece com os outros se o state de um corromper?
+
+---
 
 ## Bloco 3 — Capstone
 
+Juntar Packer e Terraform num pipeline só, separar ambientes, e empacotar como
+repositório apresentável.
+
 ### 12-capstone-ponte
-- [ ] Criar `nginx.conf`, `setup.sh`, template Packer com `post-processor "manifest"`
-- [ ] `packer build` gerou `manifest.json`
-- [ ] Criar Terraform lendo o manifest via `data "local_file"` + `jsondecode()`
+
+**Ensina:** o pipeline de duas etapas ponta a ponta — Packer produz a imagem e
+escreve o manifest; Terraform lê o manifest e sobe exatamente aquela imagem.
+**Depende de:** Labs 02 e 05
+
+- [ ] Criar `nginx.conf`, `setup.sh`, `docker.pkr.hcl` (com `post-processor "manifest"`)
+- [ ] `packer build .` gerou `manifest.json`
+- [ ] Criar `terraform/main.tf` lendo o manifest via `data "local_file"` + `jsondecode()`
 - [ ] `terraform apply` subiu o container com a imagem do Packer
-- [ ] `curl` retorna `capstone v1`
-- [ ] Editei config, rebuild do Packer, `plan` propôs substituir
-- [ ] `apply` e confirmei `capstone v2`
+- [ ] `curl localhost:8080` retorna `capstone v1`
+- [ ] Editei `nginx.conf`, rebuild do Packer, `terraform plan` propôs substituir
+- [ ] `terraform apply` e confirmei `capstone v2` no navegador
 - [ ] Quebrei: apaguei `manifest.json`, li o erro do `data` source
-- [ ] Restaurei o manifest
-- [ ] `destroy` limpo
+- [ ] Restaurei o manifest e voltei a funcionar
+- [ ] `terraform destroy` limpo
 - [ ] Notas preenchidas no README
 
 ### 13-capstone-ambientes
+
+**Ensina:** separar ambientes de verdade — e por que `terraform workspace`
+**não** é a resposta para prod/non-prod (workspaces compartilham backend e
+credencial; um `select` errado aplica em prod sem aviso).
+**Artefatos:** `terraform/envs/{dev,prod}/` + `terraform/modules/`
+
 - [ ] Criar `main.tf` usando `terraform.workspace`
 - [ ] Criar `dev.tfvars` e `prod.tfvars`
-- [ ] `workspace new dev` / `new prod`
-- [ ] Apply em dev com `dev.tfvars`
-- [ ] Apply em prod com `prod.tfvars`
-- [ ] Confirmei `terraform.tfstate.d/` — um state por workspace
-- [ ] Reproduzi a armadilha: `prod` selecionado + `dev.tfvars` aplicado por engano
+- [ ] `terraform workspace new dev` / `new prod`
+- [ ] Apply em `dev` com `dev.tfvars`
+- [ ] Apply em `prod` com `prod.tfvars`
+- [ ] Confirmei `terraform.tfstate.d/` com um state por workspace
+- [ ] Reproduzi a armadilha: selecionei `prod` e apliquei `dev.tfvars` por engano
 - [ ] Entendi por que não há barreira estrutural entre workspaces
-- [ ] Criei `modules/stack/` + `envs/dev/` + `envs/prod/`
+- [ ] Criei a estrutura `modules/stack/` + `envs/dev/` + `envs/prod/`
 - [ ] Apply funcionando nos dois diretórios separados
-- [ ] Conclusão "diretório > workspace" anotada nas Notas
-- [ ] Limpeza completa
+- [ ] Conclusão sobre "por que diretório > workspace para prod/non-prod" anotada nas Notas
+- [ ] Limpeza completa (destroy nos dois modelos, workspaces deletados)
 - [ ] Notas preenchidas no README
-- [ ] **Conectar com objetivo:** isolamento por diretório/backend é o padrão que escala pra isolamento por tenant
+
+> **Conexão com o objetivo:** isolamento por diretório/backend é o padrão que
+> escala para isolamento por tenant.
 
 ### 14-capstone-empacotar
-- [ ] Criar `build.ps1` (packer → terraform, ponta a ponta)
-- [ ] Criar `destroy.ps1`
-- [ ] README do capstone: o quê, por quê, como rodar em 3 comandos
+
+**Ensina:** transformar os labs num repositório que outra pessoa clona e roda
+sem te perguntar nada. É o entregável de portfólio.
+
+- [ ] Criar `build.ps1` (packer init/validate/build → terraform init/plan/apply)
+- [ ] Criar `destroy.ps1` (terraform destroy + limpeza de imagens/manifest/tfplan)
+- [ ] `README.md` do capstone: o que é, por quê, como rodar em 3 comandos
 - [ ] Diagrama mermaid incluído
-- [ ] `.terraform.lock.hcl` confirmado versionado
-- [ ] Versões pinadas
-- [ ] Seção "próximos passos: AWS"
+- [ ] `.terraform.lock.hcl` confirmado como versionado (`git check-ignore -v` vazio)
+- [ ] Versões pinadas (provider, plugin Packer, `required_version` Terraform)
+- [ ] Seção "próximos passos: AWS" com a tabela de tradução
 - [ ] `.\build.ps1` rodou do zero e funcionou
-- [ ] `.\destroy.ps1` limpou tudo
-- [ ] Pedi pra alguém seguir só o README sem ajuda
+- [ ] `.\destroy.ps1` limpou tudo (conferido com `docker ps -a` e `docker images`)
+- [ ] Pedi pra alguém (ou eu mesmo, dias depois) seguir só o README sem ajuda
 - [ ] Commit + push do capstone
 - [ ] Notas preenchidas no README
 
+---
+
 ## Bloco 4 — Windows Server (Hyper-V)
 
-> ⚠️ Decisão pendente: Hyper-V local vs Azure Marketplace (`azure-arm`). Ver Backlog.
+O mesmo workflow de golden image, agora com VM de verdade em vez de container.
+Replica o processo usado para golden images de servidor.
+
+> ⚠️ **Decisão pendente:** rodar local com `hyperv-iso` ou na nuvem com
+> `azure-arm` (imagem do Marketplace evita o download manual da ISO). Ver
+> [Backlog](#backlog).
+>
+> **Pré-requisitos deste bloco:** ver [`docs/labs/00-setup/SETUP-HYPERV.md`](docs/labs/00-setup/SETUP-HYPERV.md)
+> (Hyper-V habilitado, Virtual Switch, ISOs, Ansible no WSL).
 
 ### 15-packer-hyperv-windows
-- [ ] Virtual Switch externo criado (`LabSwitch`) ✅ *já feito, fora de ordem*
+
+**Ensina:** instalação desassistida — o `Autounattend.xml` substitui horas de
+cliques em wizard, e o WinRM é como o Packer conversa com Windows.
+
+- [x] Virtual Switch externo criado no Hyper-V (`LabSwitch`) — *feito fora de ordem, durante o setup do ambiente*
 - [ ] ISO do Windows Server 2022 Evaluation baixada
-- [ ] Criar `variables.pkrvars.hcl`
-- [ ] Criar template com builder `hyperv-iso`
-- [ ] Criar `Autounattend.xml`
+- [ ] Criar `variables.pkrvars.hcl` com paths e credenciais
+- [ ] Criar `win2022.pkr.hcl` com builder `hyperv-iso`
+- [ ] Criar `Autounattend.xml` com partições UEFI + auto-login + WinRM
 - [ ] `packer init .` → plugins baixados
 - [ ] `packer validate -var-file="variables.pkrvars.hcl" .` → sem erros
 - [ ] `packer build -var-file="variables.pkrvars.hcl" .` → build inicia
-- [ ] Observar no Hyper-V Manager: instalação sozinha
-- [ ] WinRM conecta, provisioner roda
-- [ ] Build completa → imagem exportada
-- [ ] Quebre: remover Autounattend → timeout WinRM
-- [ ] Quebre: dessincronizar senha → falha de auth
-- [ ] Limpeza
+- [ ] Observar no Hyper-V Manager: VM criada, Windows instalando sozinho
+- [ ] WinRM conecta e provisioner PowerShell roda com sucesso
+- [ ] Build completa → imagem exportada em `output-win2022/`
+- [ ] **Quebre:** remover Autounattend dos cd_files → timeout de WinRM
+- [ ] **Quebre:** dessincronizar senha entre Autounattend e variables → falha de auth
+- [ ] Limpeza: remover VM do Hyper-V e pasta de output
 
 ### 16-ansible-windows-winrm
-- [ ] Ansible + pywinrm no WSL
+
+**Ensina:** configurar Windows por código, de forma idempotente — e a
+diferença entre módulos declarativos (`win_feature`) e `win_shell` (que sempre
+reporta `changed`).
+**Depende de:** Lab 15 (VM rodando)
+**Artefato:** `ansible/playbooks/`
+
+- [ ] Ansible + pywinrm instalados no WSL (`ansible --version`, `python -c "import winrm"`)
 - [ ] VM Windows Server rodando (IP anotado)
 - [ ] Criar `inventory.yml` com credenciais WinRM
 - [ ] Criar `playbook.yml` com tasks de feature, hardening e validação
-- [ ] `win_ping` → pong
-- [ ] Playbook roda sem erros
-- [ ] IIS instalado e rodando
-- [ ] `provisioned.txt` existe
-- [ ] Firewall habilitado, regra WinRM presente
-- [ ] Quebre: idempotência (2ª execução)
-- [ ] Quebre: senha errada → HTTP 401
-- [ ] Quebre: porta 5986 sem cert → falha SSL
+- [ ] `ansible ... win_ping` → pong (conectividade OK)
+- [ ] `ansible-playbook` roda sem erros
+- [ ] Confirmar: IIS instalado e rodando na VM
+- [ ] Confirmar: `provisioned.txt` existe em `C:\Logs\Automation\`
+- [ ] Confirmar: firewall habilitado, regra WinRM presente
+- [ ] **Quebre:** rodar playbook 2x → observar idempotência (ok vs changed)
+- [ ] **Quebre:** senha errada no inventory → HTTP 401
+- [ ] **Quebre:** porta 5986 sem cert → falha SSL
 
 ### 17-golden-image-pipeline
-- [ ] Copiar `Autounattend.xml` do Lab 15
-- [ ] Template com provisioners PowerShell + Ansible + Sysprep
-- [ ] `playbook-golden.yml`
+
+**Ensina:** o pipeline completo de golden image Windows — Packer cria, Ansible
+provisiona, Sysprep generaliza. Sem Sysprep, todas as VMs clonadas herdam o
+mesmo SID (problema sério em domínio).
+**Depende de:** Labs 15 e 16
+
+- [ ] Copiar `Autounattend.xml` do lab 15
+- [ ] Criar `golden.pkr.hcl` com provisioners PowerShell + Ansible + Sysprep
+- [ ] Criar `playbook-golden.yml` (features + hardening + updates)
 - [ ] `packer init .` e `packer build` → build completo
 - [ ] Ansible provisiona via WinRM durante o build
-- [ ] Sysprep executa, VM desliga sozinha
+- [ ] Sysprep executa e VM desliga sozinha
 - [ ] `golden-manifest.json` gerado
-- [ ] Quebre: sem Sysprep → SID duplicado
-- [ ] Quebre: timeout curto → perda de conexão no reboot
+- [ ] **Quebre:** sem Sysprep → SID duplicado
+- [ ] **Quebre:** timeout curto → perda de conexão no reboot
 
 ### 18-tf-hyperv-provider
-- [ ] Golden image VHDX disponível
-- [ ] `main.tf` com provider `taliesins/hyperv`
-- [ ] `init` → provider baixado
-- [ ] `apply` → VM criada a partir da golden image
+
+**Ensina:** fecha o ciclo — Packer cria a imagem uma vez, Terraform instancia
+quantas VMs quiser a partir dela. É o mesmo padrão de AMI + Auto Scaling Group
+na AWS.
+**Depende de:** Lab 17 (golden image VHDX)
+
+- [ ] Golden image VHDX do lab 17 disponível
+- [ ] Criar `main.tf` com provider `taliesins/hyperv`
+- [ ] `terraform init` → provider baixado
+- [ ] `terraform apply` → VM criada no Hyper-V a partir da golden image
 - [ ] Verificar VM rodando: `Get-VM lab18-vm*`
-- [ ] Escalar pra 2 instâncias → só a segunda é criada
-- [ ] Inspecionar state → IDs do Hyper-V mapeados
-- [ ] Quebre: deletar VM fora do TF → drift
-- [ ] Quebre: reduzir count → destroy vs prevent_destroy
-- [ ] `destroy` limpo
+- [ ] Escalar para 2 instâncias → só a segunda é criada
+- [ ] Inspecionar `terraform.tfstate` → IDs do Hyper-V mapeados
+- [ ] **Quebre:** deletar VM fora do TF → drift detectado no plan
+- [ ] **Quebre:** reduzir count → entender destroy vs prevent_destroy
+- [ ] `terraform destroy` → limpeza total
+
+---
 
 ## Bloco 5 — Kubernetes (mini-KOB)
 
+Cluster local em VMs Hyper-V, replicando a stack do KOB: workloads, Vault,
+PostgreSQL, e Terraform como orquestrador de governança.
+
+> **Requisito de memória:** duas VMs de 4GB + host. Reserve ~12GB livres antes
+> de começar o Lab 19.
+
 ### 19-k8s-cluster-hyperv
+
+**Ensina:** subir um cluster do zero com `kubeadm` — e por que swap desligado
+e CNI instalado não são opcionais.
+**Artefato:** `ansible/playbooks/`
+
 - [ ] ISO Ubuntu Server 24.04 baixada
 - [ ] Criar VM `k8s-cp` (control-plane) no Hyper-V
 - [ ] Criar VM `k8s-w1` (worker) no Hyper-V
-- [ ] Ubuntu instalado (SSH, IPs estáticos)
-- [ ] Swap desabilitado
-- [ ] Módulos de kernel e sysctl
-- [ ] containerd (SystemdCgroup=true)
-- [ ] kubeadm/kubelet/kubectl instalados
-- [ ] `kubeadm init` no control-plane
-- [ ] kubectl configurado no CP
-- [ ] Flannel CNI
-- [ ] `kubeadm join` no worker
-- [ ] `kubectl get nodes` → 2 Ready
+- [ ] Instalar Ubuntu em ambas (SSH habilitado, IPs estáticos)
+- [ ] Desabilitar swap em ambas
+- [ ] Configurar módulos de kernel e sysctl em ambas
+- [ ] Instalar containerd em ambas (SystemdCgroup = true)
+- [ ] Instalar kubeadm, kubelet, kubectl em ambas
+- [ ] `kubeadm init` no control-plane → cluster inicializado
+- [ ] Configurar kubectl no CP (`$HOME/.kube/config`)
+- [ ] Instalar Flannel CNI
+- [ ] `kubeadm join` no worker → nó juntou ao cluster
+- [ ] `kubectl get nodes` → 2 nós Ready
 - [ ] Copiar kubeconfig para o host Windows
 - [ ] `kubectl get nodes` funciona do Windows
-- [ ] Quebre: swap ligado → erro
-- [ ] Quebre: sem CNI → NotReady
-- [ ] Pod de teste roda no worker
+- [ ] **Quebre:** swap ligado → erro no kubeadm
+- [ ] **Quebre:** sem CNI → nós NotReady
+- [ ] Pod de teste nginx roda no worker
 
 ### 20-k8s-workload-ingress
-- [ ] Cluster do Lab 19 rodando
-- [ ] Ingress NGINX controller
-- [ ] namespace, deployment, service, ingress
-- [ ] resourcequota, networkpolicy
+
+**Ensina:** governança dentro de um namespace — ResourceQuota force que todo
+pod declare `requests`, e NetworkPolicy bloqueia tráfego não autorizado.
+**Depende de:** Lab 19
+**Artefato:** `k8s/manifests/`
+
+- [ ] Cluster do lab 19 rodando
+- [ ] Instalar Ingress NGINX controller
+- [ ] Criar e aplicar: namespace, deployment, service, ingress
+- [ ] Criar e aplicar: resourcequota, networkpolicy
 - [ ] `kubectl -n lab20-app get all` → pods Running
 - [ ] Pods distribuídos no worker (verificar com `-o wide`)
-- [ ] ResourceQuota Used vs Hard
-- [ ] Scale 5 cabe, scale 15 recusado
-- [ ] Quebre: sem requests + quota → falha
-- [ ] Quebre: NetworkPolicy bloqueando tráfego
-- [ ] Limpeza
+- [ ] ResourceQuota mostra Used vs Hard
+- [ ] Scale para 5 → cabe; scale para 15 → recusado pela quota
+- [ ] **Quebre:** deployment sem requests + quota ativa → falha
+- [ ] **Quebre:** NetworkPolicy bloqueando tráfego inter-pod
+- [ ] Limpeza: `kubectl delete namespace lab20-app`
 
 ### 21-k8s-vault-postgres
+
+**Ensina:** segredo injetado por sidecar — as credenciais chegam no pod sem
+estar no YAML, em ConfigMap ou em Secret do Kubernetes.
+**Depende de:** Lab 19
+**Artefato:** `k8s/helm/`
+
 - [ ] Helm instalado
-- [ ] Vault via Helm (dev mode + injector)
-- [ ] PostgreSQL via Helm
-- [ ] Segredo criado no Vault
-- [ ] Kubernetes auth habilitado
-- [ ] Policy + role para o ServiceAccount
-- [ ] `app-with-vault.yml` com annotations
-- [ ] Pod mostra "DB OK"
-- [ ] Credenciais injetadas pelo sidecar confirmadas
-- [ ] Quebre: policy deny → pod em loop
-- [ ] Quebre: ServiceAccount errado → auth falha
-- [ ] Quebre: deletar segredo → sidecar falha
-- [ ] Limpeza
+- [ ] Vault instalado via Helm (dev mode + injector)
+- [ ] PostgreSQL instalado via Helm (namespace database)
+- [ ] Segredo criado no Vault (`secret/lab21/db`)
+- [ ] Kubernetes auth habilitado no Vault
+- [ ] Policy + role criados para `lab21-sa`
+- [ ] Criar `app-with-vault.yml` com annotations de Vault inject
+- [ ] Pod do app roda e mostra "DB OK" nos logs
+- [ ] `cat /vault/secrets/db` mostra credenciais injetadas pelo sidecar
+- [ ] **Quebre:** policy deny → pod em loop
+- [ ] **Quebre:** ServiceAccount errado → auth falha
+- [ ] **Quebre:** deletar segredo → sidecar falha no refresh
+- [ ] Limpeza: `helm uninstall`, `kubectl delete namespace`
 
 ### 22-tf-kubernetes-provider
-- [ ] Cluster rodando, kubectl configurado
-- [ ] `main.tf` com provider kubernetes + `for_each`
-- [ ] `init` → provider baixado
-- [ ] `apply` → namespaces + quotas + policies
-- [ ] dev e prod com labels corretos
-- [ ] ResourceQuota diferente dev vs prod
-- [ ] NetworkPolicy deny-all só em prod
-- [ ] Adicionar "staging" ao mapa → `plan` cria só o novo
-- [ ] Quebre: deletar namespace via kubectl → drift
-- [ ] Quebre: recurso manual → TF não sabe
-- [ ] `destroy` limpo
-- [ ] **Conectar com objetivo:** provisiona namespace por tenant via mapa, com quota e policy automáticas
+
+**Ensina:** Terraform gerenciando a infra base do cluster (namespaces, quotas,
+RBAC, policies) — e onde está o limite: workload muda rápido demais, isso é
+trabalho de GitOps.
+**Depende de:** Lab 19
+**Artefato:** `terraform/stacks/`
+
+- [ ] Cluster rodando e kubectl configurado
+- [ ] Criar `main.tf` com provider kubernetes + namespaces via for_each
+- [ ] `terraform init` → provider baixado
+- [ ] `terraform apply` → namespaces + quotas + policies criados
+- [ ] `kubectl get namespaces -l managed-by=terraform` → dev e prod
+- [ ] ResourceQuota diferente em dev vs prod (verificar)
+- [ ] NetworkPolicy deny-all apenas em prod
+- [ ] Adicionar namespace "staging" ao mapa → `plan` cria só o novo
+- [ ] **Quebre:** deletar namespace via kubectl → drift no plan
+- [ ] **Quebre:** recurso manual dentro do namespace → TF não sabe
+- [ ] `terraform destroy` → limpeza completa
+
+> **Conexão com o objetivo:** este lab é o mais próximo do alvo final —
+> provisiona namespace por tenant a partir de um mapa, com quota e policy
+> aplicadas automaticamente. Adicionar um tenant = adicionar uma entrada.
