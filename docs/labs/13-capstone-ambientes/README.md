@@ -107,7 +107,7 @@ testes, sandbox pessoal.
 
 ## Parte 3 — refaça do jeito certo
 
-```
+```text
 13-capstone-ambientes/
 ├── modules/
 │   └── stack/

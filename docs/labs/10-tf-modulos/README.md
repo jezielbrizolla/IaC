@@ -14,7 +14,7 @@
 Empacotar e reutilizar.
 
 ## Estrutura a criar
-```
+```text
 10-tf-modulos/
 ├── main.tf
 ├── outputs.tf

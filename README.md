@@ -8,7 +8,7 @@ Serve a dois propósitos ao mesmo tempo — é o ambiente onde eu estudo e é o
 artefato que mostra como eu estruturo IaC. O material didático fica isolado em
 [`docs/labs/`](docs/labs/); a raiz é código.
 
-```
+```text
 .
 ├── Taskfile.yml            # camada de verbos — todo comando entra por aqui
 ├── packer/                 # definição de imagens

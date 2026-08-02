@@ -17,6 +17,7 @@ ao `README.md` dele.
 **Se você está retomando:** veja [Agora](#agora) e [Backlog](#backlog).
 
 Comandos úteis (da raiz `labs/`):
+
 ```powershell
 task status    # imprime este progresso no terminal
 task setup     # prepara a máquina e marca a seção 00-setup sozinho
@@ -32,7 +33,7 @@ Convenções do repo — nomes de artefato, onde o código mora, por que o
 
 Onde cada assunto é ensinado, e qual pergunta ele responde.
 
-#### Packer
+### Packer
 
 | Conceito | Lab | Responde |
 |---|---|---|
@@ -49,7 +50,7 @@ Onde cada assunto é ensinado, e qual pergunta ele responde.
 | `${source.name}` | [04](docs/labs/04-packer-multi-source/) | Como diferencio o output por source? |
 | `post-processor "manifest"` | [05](docs/labs/05-packer-manifest/) | Como o Terraform descobre qual imagem usar? |
 
-#### Terraform
+### Terraform
 
 | Conceito | Lab | Responde |
 |---|---|---|
@@ -66,7 +67,7 @@ Onde cada assunto é ensinado, e qual pergunta ele responde.
 | Workspaces vs diretórios | [13](docs/labs/13-capstone-ambientes/) | Como separo prod de dev *de verdade*? |
 | Pipeline / empacotamento | [14](docs/labs/14-capstone-empacotar/) | Como rodo tudo com um comando? |
 
-#### Windows Server / Hyper-V
+### Windows Server / Hyper-V
 
 | Conceito | Lab | Responde |
 |---|---|---|
@@ -75,7 +76,7 @@ Onde cada assunto é ensinado, e qual pergunta ele responde.
 | Golden image + Sysprep | [17](docs/labs/17-golden-image-pipeline/) | Por que Sysprep evita SID duplicado? |
 | Terraform + provider Hyper-V | [18](docs/labs/18-tf-hyperv-provider/) | Como instancio N VMs a partir de uma golden image? |
 
-#### Kubernetes
+### Kubernetes
 
 | Conceito | Lab | Responde |
 |---|---|---|
@@ -162,7 +163,7 @@ do repo — e justamente por isso ganhou automação própria
 - [x] Configurar chave SSH `ssh-iac` no PowerShell/Windows
 - [x] Validar `ssh -T git@github.com` no Windows/Git Bash → autenticou como `jezielbrizolla`
 - [x] Validar `ssh -T git@github.com` dentro do WSL Ubuntu → autenticou como `jezielbrizolla`
-- [x] Criar repositório remoto no GitHub — https://github.com/jezielbrizolla/IaC
+- [x] Criar repositório remoto no GitHub — <https://github.com/jezielbrizolla/IaC>
 - [x] Adicionar `origin` (SSH) em `labs/` apontando para `git@github.com:jezielbrizolla/IaC.git`
 - [x] Fazer commit inicial em `labs/`
 - [x] Enviar o primeiro push para `origin main`
@@ -207,6 +208,7 @@ mas a estrutura do HCL é a mesma que se usa com `amazon-ebs`, `azure-arm` ou
 build time, e por que a ordem dos provisioners é a ordem de execução (não há
 grafo de dependência como no Terraform).
 **Artefatos:**
+
 - `packer/templates/ubuntu-nginx.pkr.hcl`
 - `packer/scripts/install-nginx.sh`
 - `packer/files/nginx/default.conf`
@@ -231,6 +233,7 @@ grafo de dependência como no Terraform).
 **Ensina:** parametrizar — o mesmo template produzindo imagens diferentes sem
 editar o arquivo, e as quatro formas de passar valor.
 **Artefatos:**
+
 - `packer/templates/app-versioned.pkr.hcl`
 - `packer/vars/app-versioned.pkrvars.hcl`
 

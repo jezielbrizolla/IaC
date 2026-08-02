@@ -14,7 +14,7 @@ o primeiro passo concreto na direção de "um tenant = uma chamada com valores
 diferentes".
 
 Arquivos ao final:
-```
+```text
 terraform/stacks/web-basic/
 ├── main.tf              ← modificado
 ├── variables.tf         ← novo
@@ -144,7 +144,7 @@ tem default, é obrigatória), mas se aplica a `container_name` e `labels`.
 
 **Precedência real** (⚠ diferente do Packer do Lab 03 — não é só trocar o
 prefixo, a ordem entre tfvars e env var **inverte**):
-```
+```text
 default  <  TF_VAR_*  <  terraform.tfvars  <  -var
 ```
 `terraform.tfvars` vence variável de ambiente. Testado isolado: com
@@ -166,7 +166,7 @@ terraform -chdir=terraform/stacks/web-basic apply -var="external_port=80"
 ```
 
 Você vai ver:
-```
+```text
 Error: Invalid value for variable
   on variables.tf line 6:
    6: variable "external_port" {

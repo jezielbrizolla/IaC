@@ -49,10 +49,10 @@ mais a instalação do `task`.
 Veja a seção `### 00-setup` em [`TODO.md`](../../../TODO.md) (raiz do repo)
 para acompanhar o progresso do setup — `task setup` marca os itens
 automaticamente conforme valida cada passo.
-Repositório remoto: https://github.com/jezielbrizolla/IaC
+Repositório remoto: <https://github.com/jezielbrizolla/IaC>
 
 ## Critério de conclusão
-```
+```text
 terraform -version     # 1.x
 packer version         # 1.x
 docker run hello-world # "Hello from Docker!"

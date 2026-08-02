@@ -65,7 +65,7 @@ terraform apply -auto-approve
 terraform graph > graph.dot
 Get-Content graph.dot
 ```
-Cole o conteúdo de `graph.dot` em https://dreampuf.github.io/GraphvizOnline para ver
+Cole o conteúdo de `graph.dot` em <https://dreampuf.github.io/GraphvizOnline> para ver
 o desenho, ou leia o texto mesmo — procure as linhas `->` que ligam
 `docker_container.web` a `docker_network.app_net` e `docker_volume.app_data`.
 

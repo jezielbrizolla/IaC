@@ -22,8 +22,8 @@ os labs 00–14 (Docker) não precisam de nada disto.
 
 3. **Baixar as ISOs**:
    - Windows Server 2022 Evaluation (grátis, 180 dias):
-     https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022
-   - Ubuntu Server 24.04 LTS: https://ubuntu.com/download/server
+     <https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022>
+   - Ubuntu Server 24.04 LTS: <https://ubuntu.com/download/server>
    - Salve ambas em `C:\ISOs\` (os labs assumem esse caminho).
 
 4. **Ansible no WSL** (o Ansible controla Windows via WinRM, mas o Ansible em

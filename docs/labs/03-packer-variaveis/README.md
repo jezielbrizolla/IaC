@@ -89,7 +89,7 @@ Confirme que existem `meuapp:1.0`, `meuapp:2.0`, `meuapp:1.1` e `meuapp:3.0`.
 1. Numa cópia temporária do template (não edite o do repo), declare uma nova
    `variable "must_have" { type = string }` **sem** `default` e sem passar
    valor em lugar nenhum. Rode `packer build .` sobre essa cópia e leia:
-   ```
+   ```text
    Error: Unset variable "must_have"
    A used variable must be set or have a default value; ...
    ```

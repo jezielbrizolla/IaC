@@ -14,7 +14,7 @@
 Packer produz a imagem, Terraform consome. Pipeline de duas etapas ponta a ponta.
 
 ## Estrutura
-```
+```text
 12-capstone-ponte/
 ├── setup.sh
 ├── nginx.conf

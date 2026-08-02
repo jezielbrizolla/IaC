@@ -49,7 +49,10 @@ function Write-LabRow {
 }
 
 foreach ($line in $lines) {
-    if ($line -match '^###\s+(.+)$') {
+    # So conta como lab um header no formato "### NN-nome" (dois digitos +
+    # hifen). Subtitulos do indice de conceitos ("### Packer") tambem sao h3
+    # mas nao sao labs - sem esse filtro eles apareceriam como secoes vazias.
+    if ($line -match '^###\s+(\d{2}-\S+)\s*$') {
         # fecha o lab anterior antes de abrir o novo
         if ($currentLab) { Write-LabRow -Name $currentLab -Done $done -Items $items }
         $currentLab = $Matches[1].Trim()

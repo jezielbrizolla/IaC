@@ -19,7 +19,7 @@ agora com controle total do processo no seu PC.
 - Hyper-V habilitado e funcionando (`Get-VMSwitch` retorna ao menos um switch)
 - Virtual Switch externo criado (ver `00-setup/SETUP-HYPERV.md`)
 - ISO do Windows Server 2022 Evaluation baixada
-  (`SERVER_ISO_2022_Eval.iso` — grátis em https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022)
+  (`SERVER_ISO_2022_Eval.iso` — grátis em <https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022>)
 - Arquivo `Autounattend.xml` para instalação desassistida (criamos abaixo)
 
 ## Arquivos a criar

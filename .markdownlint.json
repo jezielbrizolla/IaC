@@ -1,0 +1,49 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DavidAnson/markdownlint/main/schema/markdownlint-config-schema.json",
+
+  "//": "Filosofia: manter as regras que pegam problema REAL (renderizacao quebrada, link morto, heading que quebra script), desligar as que sao so preferencia de estilo. Sem isso o lint vira ruido e ninguem olha.",
+
+  "//--- desligadas: estilo, nao problema ---": "",
+
+  "MD013": false,
+  "//MD013": "line-length: tabelas do indice de conceitos passam de 80 colunas por natureza; nao da pra quebrar linha em tabela markdown.",
+
+  "MD060": false,
+  "//MD060": "table-column-style: exige pipes alinhados por padding. Cosmetico.",
+
+  "MD033": false,
+  "//MD033": "no-inline-html: o <br> no TODO.md (nota de autoria do lab 02) e a unica forma de quebrar linha dentro de um item de lista.",
+
+  "MD049": false,
+  "//MD049": "emphasis-style: _italico_ vs *italico*, ambos validos.",
+
+  "MD022": false,
+  "//MD022": "blanks-around-headings: os READMEs usam '## Titulo' seguido direto do texto. Renderiza normal no GitHub e no VS Code.",
+
+  "MD031": false,
+  "//MD031": "blanks-around-fences: mesmo caso - fence logo apos paragrafo renderiza corretamente em CommonMark.",
+
+  "MD032": false,
+  "//MD032": "blanks-around-lists: lista pode interromper paragrafo em CommonMark.",
+
+  "MD012": false,
+  "//MD012": "no-multiple-blanks: linhas em branco extras nao afetam nada.",
+
+  "MD036": false,
+  "//MD036": "no-emphasis-as-heading: o padrao '**~1h · essencial**' no topo dos labs e intencional - e metadado, nao secao.",
+
+  "MD024": false,
+  "//MD024": "no-duplicate-heading: cada README repete '## Notas', '## Rodar' etc. Sao arquivos separados, sem colisao de ancora.",
+
+  "MD058": false,
+  "//MD058": "blanks-around-tables: cosmetico.",
+
+  "MD014": false,
+  "//MD014": "commands-show-output: '$ comando' em bloco de codigo e legivel.",
+
+  "//--- mantidas: pegam problema real ---": "",
+  "//MD001": "heading-increment: JA PEGOU UM BUG REAL. Heading pulado quebrava status.ps1 e setup.ps1, que detectam secao por nivel de header.",
+  "//MD040": "fenced-code-language: bloco sem linguagem perde syntax highlight.",
+  "//MD034": "no-bare-urls: URL nua pode nao virar link em alguns renderizadores.",
+  "//MD041": "first-line-heading: arquivo deve comecar com titulo."
+}
