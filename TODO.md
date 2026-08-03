@@ -104,8 +104,9 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 
 ## Agora
 
-**Próximo: Lab 08 — Dependências e o grafo** (Bloco 2).
-Stack novo: `terraform/stacks/web-network/`. Ainda não iniciado.
+**Próximo: Lab 10 — Módulos** (Bloco 2).
+Stack novo: `terraform/stacks/`. Ainda não iniciado. É "o" lab do objetivo de
+tenant framework — ver [Conectar com objetivo](docs/labs/10-tf-modulos/).
 
 ## Backlog
 
@@ -131,11 +132,11 @@ Pendências que não pertencem a um lab específico:
 |---|---|---|
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
-| 2 — Terraform | 06–11 | 🔶 26/72 |
+| 2 — Terraform | 06–11 | 🔶 45/72 |
 | 3 — Capstone | 12–14 | ⬜ 0/36 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **92/271 (34%)** |
+| **Total** | | **111/272 (41%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -334,34 +335,35 @@ concreto rumo a "um tenant = mesma definição, valores diferentes".
 
 **Ensina:** como o Terraform decide a ordem de criação. Dependência implícita
 (por referência de atributo) é a regra; `depends_on` é a exceção.
-**Stack sugerido:** `terraform/stacks/web-network/`
+**Artefato:** `terraform/stacks/web-network/main.tf`
 
-- [ ] Criar `main.tf` com `docker_network`, `docker_volume`, `docker_container` (referência implícita)
-- [ ] `terraform apply` OK
-- [ ] `terraform graph > graph.dot` gerado e lido (ou visualizado no Graphviz online)
-- [ ] Reescrevi usando `depends_on` explícito e comparei o grafo
-- [ ] Voltei para a versão com referência de atributo (a correta)
-- [ ] Conclusão sobre implícito vs `depends_on` anotada nas Notas
-- [ ] Quebrei: criei `circular.tf` com dependência circular, li o erro `Cycle: ...`
-- [ ] Apaguei `circular.tf` depois do teste
-- [ ] Notas preenchidas no README
+- [x] Criar `main.tf` com `docker_network`, `docker_volume`, `docker_container` (referência implícita)
+- [x] `terraform apply` OK
+- [x] `terraform graph > graph.dot` gerado e lido (ou visualizado no Graphviz online)
+- [x] Reescrevi usando `depends_on` explícito e comparei o grafo
+- [x] Entendi por que o grafo NÃO muda — a diferença é o dado que trafega, não a ordem
+- [x] Voltei para a versão com referência de atributo (a correta)
+- [x] Conclusão sobre implícito vs `depends_on` anotada nas Notas
+- [x] Quebrei: criei `circular.tf` com dependência circular, li o erro `Cycle: ...`
+- [x] Apaguei `circular.tf` depois do teste
+- [x] Notas preenchidas no README
 
 ### 09-tf-count-foreach-lifecycle
 
 **Ensina:** identidade por **índice** (`count`) vs por **chave** (`for_each`) —
 e por que isso é a diferença entre um deploy tranquilo e um incidente. Mais os
 guardrails de `lifecycle`.
-**Stack sugerido:** `terraform/stacks/web-fleet/`
+**Artefato:** `terraform/stacks/web-count-foreach/main.tf` + `count.tf`
 
-- [ ] Criar `main.tf` com a imagem compartilhada
-- [ ] Criar `count.tf`, apply com 3 containers
-- [ ] Remover `"b"` da lista, `plan` (sem aplicar) e ler o destroy/recreate indevido
-- [ ] `terraform destroy` e trocar para `foreach.tf`
-- [ ] Apply com `for_each`, remover `"b"`, `plan` e confirmar que só ele é destruído
-- [ ] Diferença count vs for_each anotada nas Notas
-- [ ] Testar `create_before_destroy = true` e ver a ordem inverter no plan
-- [ ] Testar `ignore_changes = [image]`
-- [ ] Testar `prevent_destroy = true` e ler o erro do destroy (depois remover)
+- [x] Criar `main.tf` com a imagem compartilhada
+- [x] Criar `count.tf`, apply com 3 containers
+- [x] Remover `"b"` da lista, `plan` (sem aplicar) e ler o destroy/recreate indevido
+- [x] `terraform destroy` e trocar para `foreach.tf`
+- [x] Apply com `for_each`, remover `"b"`, `plan` e confirmar que só ele é destruído
+- [x] Diferença count vs for_each anotada nas Notas
+- [x] Testar `create_before_destroy = true` e ver a ordem inverter no plan
+- [x] Testar `ignore_changes = [image]`
+- [x] Testar `prevent_destroy = true` e ler o erro do destroy (depois remover)
 - [ ] `terraform destroy` limpo no final
 - [ ] Notas preenchidas no README
 

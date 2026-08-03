@@ -1,21 +1,22 @@
 # Terraform Lab 4 — count vs for_each e lifecycle
 
-> **⚠ Conteúdo pendente de migração de estrutura.**
-> Este README ainda descreve o layout antigo (uma pasta por lab, com
-> `cd` e arquivos soltos). O repo agora usa shape de produção: o código
-> deste lab vai morar em `terraform/stacks/`, e os comandos entram por
-> `task` a partir da raiz — sem `cd`. O conteúdo conceitual (HCL, o que
-> cada bloco faz, o "Quebre isto") segue válido; os **caminhos e comandos**
-> serão ajustados quando chegarmos neste lab. Ver [README raiz](../../../README.md).
-
 **~1h · essencial**
 
 ## Objetivo
 O experimento que ensina de vez por que `for_each` quase sempre ganha.
 
+## Onde o código mora
+`terraform/stacks/web-count-foreach/` — `main.tf` (imagem compartilhada) +
+`count.tf` (evolui durante o lab: primeiro `count`, depois `for_each`).
+
+> **Conexão com o objetivo:** o mapa do `for_each` é o padrão de tenant —
+> cada entrada é um tenant, adicionar uma linha provisiona um novo, remover
+> destrói só aquele.
+
 ## Base comum
 
-`main.tf` (imagem compartilhada):
+`main.tf`:
+
 ```hcl
 terraform {
   required_version = ">= 1.5"
@@ -38,6 +39,7 @@ resource "docker_image" "nginx" {
 ## Experimento 1 — count
 
 `count.tf`:
+
 ```hcl
 variable "apps" {
   type    = list(string)
@@ -50,26 +52,30 @@ resource "docker_container" "app" {
   image = docker_image.nginx.image_id
 }
 ```
+
+Da raiz `labs/`:
+
 ```powershell
-terraform init
-terraform apply -auto-approve
-terraform state list
+terraform -chdir=terraform/stacks/web-count-foreach init
+terraform -chdir=terraform/stacks/web-count-foreach apply -auto-approve
+terraform -chdir=terraform/stacks/web-count-foreach state list
 ```
+
 Agora **remova `"b"`** da lista (fica `["a", "c"]`):
+
 ```powershell
-terraform plan
+terraform -chdir=terraform/stacks/web-count-foreach plan
 ```
+
 **Não aplique.** Leia com atenção: o Terraform quer **destruir e recriar** o
 `docker_container.app[2]` (que era `"c"`), porque com `count` a identidade é o
 **índice** — ao remover o índice 1, tudo depois dele "escorrega" uma posição.
 
-```powershell
-terraform destroy -auto-approve
-```
-
 ## Experimento 2 — for_each
 
-Substitua `count.tf` por `foreach.tf`:
+Substitua o `resource` de `count.tf` pela versão com `for_each` (mesmo
+arquivo, ou um `foreach.tf` separado — tanto faz, é a mesma pasta):
+
 ```hcl
 variable "apps" {
   type    = set(string)
@@ -82,9 +88,11 @@ resource "docker_container" "app" {
   image    = docker_image.nginx.image_id
 }
 ```
+
 ```powershell
-terraform apply -auto-approve
+terraform -chdir=terraform/stacks/web-count-foreach apply -auto-approve
 ```
+
 Remova `"b"` da lista, `terraform plan`. Agora **só o `"b"` é destruído** — os
 outros dois nem aparecem no plan. Com `for_each` a identidade é a **chave**.
 
@@ -92,23 +100,49 @@ Anote a diferença com suas palavras nas Notas. Isso cai na prova e, mais
 importante, é a diferença entre um deploy tranquilo e um incidente em produção.
 
 ## Experimento 3 — lifecycle
+
 Adicione ao `resource "docker_container" "app"`:
+
 ```hcl
   lifecycle {
     create_before_destroy = true
     ignore_changes        = [image]
   }
 ```
+
 - `create_before_destroy = true` — force uma recriação (mude `name`) e veja a
   ordem do plan inverter (cria o novo antes de destruir o velho).
 - `ignore_changes = [image]` — troque a tag da imagem (`nginx:1.25` em vez de
   `nginx:latest`) e veja o `plan` ficar vazio para esse atributo.
-- Teste também `prevent_destroy = true` isoladamente: tente `terraform destroy`
-  e leia o erro. Remova antes de seguir, senão você não consegue limpar o lab.
+- Teste também `prevent_destroy = true` isoladamente: tente
+  `terraform -chdir=terraform/stacks/web-count-foreach destroy` e leia o erro.
+  Remova antes de seguir, senão você não consegue limpar o lab.
 
 ## Critério de conclusão
-Você consegue explicar, sem consultar, quando `count` ainda é a escolha certa —
-dica: quando são realmente "N cópias idênticas e intercambiáveis", sem identidade
-própria (ex: réplicas puras de um worker sem estado).
+Você consegue explicar, sem consultar, quando `count` ainda é a escolha
+certa — dica: quando são realmente "N cópias idênticas e intercambiáveis",
+sem identidade própria (ex: réplicas puras de um worker sem estado).
+
+## Limpeza
+
+```powershell
+terraform -chdir=terraform/stacks/web-count-foreach destroy -auto-approve
+```
 
 ## Notas
+
+- **`count` reproduziu o problema exatamente como esperado:** remover `"b"`
+  do meio da lista fez o `plan` propor destruir/recriar `app[2]` (que era
+  `"c"`, sem nenhuma relação com o item removido) — a prova concreta de que
+  com `count` a identidade é posição, não conteúdo.
+- **`for_each` isolou a remoção corretamente:** com o mesmo cenário (remover
+  `"b"`), só `docker_container.app["b"]` apareceu no plan de destroy; `"a"` e
+  `"c"` nem foram tocados.
+- **`create_before_destroy` inverteu a ordem do plan** na recriação forçada —
+  confirmado visualmente: o novo recurso aparece como `create` antes do
+  `destroy` do antigo, ao contrário do padrão (`destroy` primeiro).
+- **`ignore_changes = [image]` silenciou a mudança de tag** como esperado —
+  trocar a imagem não gerou diff no plan para aquele atributo.
+- **`prevent_destroy = true` bloqueou o `destroy`** com erro, e foi removido
+  em seguida — sem isso, o `terraform.tfstate` ficaria travado impedindo a
+  limpeza final do stack.

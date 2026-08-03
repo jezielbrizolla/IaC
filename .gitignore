@@ -5,6 +5,8 @@
 *.tfplan
 crash.log
 crash.*.log
+# saida de 'terraform graph' — regenerada em segundos, nao e definicao
+*.dot
 # variaveis com valores locais/sensiveis
 *.auto.tfvars
 override.tf
