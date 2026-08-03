@@ -108,6 +108,12 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 Stack novo: `terraform/stacks/`. Ainda não iniciado. É "o" lab do objetivo de
 tenant framework — ver [Conectar com objetivo](docs/labs/10-tf-modulos/).
 
+**Meta (não promessa):** Labs 10 e 11 até sexta-feira. Depois disso o Track 0
+"base" está fechado e a continuação é outro escopo — ver
+[`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
+(AWS/Azure/OCI) + um gerenciador local unificando nuvem privada (Hyper-V) e
+pública, alinhado com a vaga-alvo.
+
 ## Backlog
 
 Pendências que não pertencem a um lab específico:
