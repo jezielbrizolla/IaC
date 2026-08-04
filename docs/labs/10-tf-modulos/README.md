@@ -1,33 +1,22 @@
 # Terraform Lab 5 — módulos
 
-> **⚠ Conteúdo pendente de migração de estrutura.**
-> Este README ainda descreve o layout antigo (uma pasta por lab, com
-> `cd` e arquivos soltos). O repo agora usa shape de produção: o código
-> deste lab vai morar em `terraform/modules/webapp/ + terraform/stacks/`, e os comandos entram por
-> `task` a partir da raiz — sem `cd`. O conteúdo conceitual (HCL, o que
-> cada bloco faz, o "Quebre isto") segue válido; os **caminhos e comandos**
-> serão ajustados quando chegarmos neste lab. Ver [README raiz](../../../README.md).
-
 **~1h**
 
 ## Objetivo
 Empacotar e reutilizar.
 
-## Estrutura a criar
-```text
-10-tf-modulos/
-├── main.tf
-├── outputs.tf
-└── modules/
-    └── webapp/
-        ├── main.tf
-        ├── variables.tf
-        └── outputs.tf
-```
+## Onde o código mora
+`terraform/modules/webapp/` (o módulo) + `terraform/stacks/web-modules/`
+(o root que o chama duas vezes).
+
+> **Conexão com o objetivo: este é *o* lab.** Um tenant = uma chamada de
+> módulo com variáveis diferentes. Corrigir um guardrail no módulo corrige
+> em todos os tenants de uma vez.
 
 ## Arquivos
 
-`modules/webapp/variables.tf`:
+`terraform/modules/webapp/variables.tf`:
+
 ```hcl
 variable "name" {
   type = string
@@ -38,8 +27,18 @@ variable "port" {
 }
 ```
 
-`modules/webapp/main.tf`:
+`terraform/modules/webapp/main.tf`:
+
 ```hcl
+terraform {
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "~> 3.0"
+    }
+  }
+}
+
 resource "docker_image" "nginx" {
   name         = "nginx:latest"
   keep_locally = true
@@ -73,7 +72,8 @@ resource "docker_container" "app" {
 }
 ```
 
-`modules/webapp/outputs.tf`:
+`terraform/modules/webapp/outputs.tf`:
+
 ```hcl
 output "url" {
   value = "http://localhost:${var.port}"
@@ -84,7 +84,8 @@ output "container_id" {
 }
 ```
 
-`main.tf` (root):
+`terraform/stacks/web-modules/main.tf` (o root que chama o módulo):
+
 ```hcl
 terraform {
   required_version = ">= 1.5"
@@ -99,19 +100,20 @@ terraform {
 provider "docker" {}
 
 module "app_a" {
-  source = "./modules/webapp"
+  source = "../../modules/webapp"
   name   = "lab10-app-a"
   port   = 8091
 }
 
 module "app_b" {
-  source = "./modules/webapp"
+  source = "../../modules/webapp"
   name   = "lab10-app-b"
   port   = 8092
 }
 ```
 
-`outputs.tf` (root):
+`terraform/stacks/web-modules/outputs.tf`:
+
 ```hcl
 output "app_a_url" {
   value = module.app_a.url
@@ -122,20 +124,32 @@ output "app_b_url" {
 }
 ```
 
+Repare em duas coisas de convenção:
+
+- `source = "../../modules/webapp"` — caminho relativo **do stack até o
+  módulo**, não do repo. `terraform/stacks/web-modules/` → sobe dois níveis
+  → `terraform/modules/webapp/`.
+- Só o **root** (`stacks/web-modules/main.tf`) declara `provider "docker" {}`
+  de verdade. O módulo declara só `required_providers` — quem configura o
+  provider é sempre quem chama, nunca o módulo. Ver "Quebre isto" nº 3.
+
 ## Rodar
+
+Da raiz `labs/`:
+
 ```powershell
-cd labs\10-tf-modulos
-terraform init
-terraform apply -auto-approve
-terraform output
+terraform -chdir=terraform/stacks/web-modules init
+terraform -chdir=terraform/stacks/web-modules apply -auto-approve
+terraform -chdir=terraform/stacks/web-modules output
 curl http://localhost:8091
 curl http://localhost:8092
-terraform destroy -auto-approve
 ```
 
 ## Entenda `source`
+
 Você usou o formato local acima. Conheça os outros dois (só leia a sintaxe,
 não precisa aplicar):
+
 - git: `source = "git::https://github.com/user/repo.git//modules/webapp?ref=v1.0.0"`
 - registry: `source = "terraform-aws-modules/vpc/aws"` + `version = "~> 5.0"`
 
@@ -143,16 +157,51 @@ não precisa aplicar):
 Módulo sem pin é build não-reproduzível.
 
 ## Quebre isto
-1. Adicione um `module "app_c" { source = "./modules/webapp" ... }` novo e rode
-   `terraform plan` **sem** rodar `terraform init` antes. Leia o erro — módulo novo
-   sempre exige `init`.
-2. Agora adicione só um `resource` novo **dentro** de `modules/webapp/main.tf`
-   (ex: outra `docker_volume`) e rode `terraform plan` sem `init`. Funciona —
-   porque o módulo em si já estava inicializado; o que exige `init` é uma
-   referência de módulo **nova**, não mudança de conteúdo de um módulo existente.
+
+1. Adicione um `module "app_c" { source = "../../modules/webapp" ... }` novo
+   e rode `terraform plan` **sem** rodar `terraform init` antes. Leia o erro
+   — módulo novo sempre exige `init`.
+2. Agora adicione só um `resource` novo **dentro** de
+   `terraform/modules/webapp/main.tf` (ex: outra `docker_volume`) e rode
+   `terraform plan` sem `init`. Funciona — porque o módulo em si já estava
+   inicializado; o que exige `init` é uma referência de módulo **nova**, não
+   mudança de conteúdo de um módulo existente.
+3. Adicione `provider "docker" {}` vazio dentro de
+   `terraform/modules/webapp/main.tf` e rode `terraform validate`. Você vai
+   ver `Warning: Redundant empty provider block` — é sintaxe antiga
+   (proxy provider configuration), deprecada. Quem configura provider é
+   sempre quem **chama** o módulo, nunca o módulo em si; o módulo só declara
+   do que precisa em `required_providers`. Remova antes de seguir.
 
 ## Critério de conclusão
 Duas apps rodando em portas diferentes, saindo do mesmo módulo, com outputs
 expostos no root.
 
+## Limpeza
+
+```powershell
+terraform -chdir=terraform/stacks/web-modules destroy -auto-approve
+```
+
 ## Notas
+
+- **Módulo webapp criado e funcionando:** estrutura correta
+  (`variables.tf`/`main.tf`/`outputs.tf`), chamado duas vezes do stack
+  `web-modules` com `source = "../../modules/webapp"` — caminho relativo do
+  stack até o módulo, não do repo.
+- **As duas apps responderam:** `curl http://localhost:8091` e `:8092`
+  retornaram 200, cada uma servida pelo seu próprio container/rede/volume,
+  todos derivados do mesmo módulo com `name`/`port` diferentes.
+- **Teste de quebra 1 confirmado:** `module "app_c"` novo sem `terraform
+  init` → erro (`Module not installed`). Módulo novo exige init.
+- **Teste de quebra 2 confirmado:** recurso novo (`docker_volume.logs`)
+  dentro de um módulo **já** inicializado → `plan` funciona sem `init`. A
+  distinção é referência de módulo nova vs conteúdo de módulo existente.
+- **`provider "docker" {}` vazio dentro do módulo gerou warning real,
+  reproduzido e confirmado:** `Warning: Redundant empty provider block` —
+  proxy provider configuration, sintaxe deprecada desde versões antigas do
+  Terraform. A prática correta: o módulo declara só `required_providers`
+  (do que ele precisa), e quem configura o provider de verdade é sempre
+  quem **chama** o módulo (o root/stack). Passar um provider explícito pra
+  dentro de um módulo só é necessário em casos avançados (múltiplas contas
+  do mesmo provider via `providers = {}`), não no caso comum.

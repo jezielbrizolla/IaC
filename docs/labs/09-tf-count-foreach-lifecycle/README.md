@@ -146,3 +146,17 @@ terraform -chdir=terraform/stacks/web-count-foreach destroy -auto-approve
 - **`prevent_destroy = true` bloqueou o `destroy`** com erro, e foi removido
   em seguida — sem isso, o `terraform.tfstate` ficaria travado impedindo a
   limpeza final do stack.
+- **Quando usar `count` em vez de `for_each`:** Usaria o `count` apenas quando
+  preciso de N cópias idênticas e totalmente intercambiáveis de um mesmo
+  recurso, onde a identidade individual de cada uma não importa. Exemplo ideal:
+  escalamento horizontal de réplicas de um worker sem estado (ex: count = 5
+  instâncias idênticas processando uma fila). Nenhuma instância possui um nome,
+  chave ou dado único. Se o count cair de 5 para 4, não importa qual instância
+  específica é destruída, pois todas fazem exatamente a mesma função. Também
+  útil como chave liga/desliga (count = var.enable_feature ? 1 : 0). Por que
+  NÃO usar count para coisas com identidade (como tenants/apps)? Porque o count
+  indexa os recursos por posição numérica no array ([0], [1], [2]). Se um item
+  do meio for removido, todos os índices seguintes escorregam, fazendo o
+  Terraform destruir e recriar recursos que não deveriam ter sido tocados. Para
+  qualquer recurso com identidade própria (ambientes, tenants, redes), o
+  `for_each` é a escolha certa por indexar por chave explícita (["tenant-a"]).

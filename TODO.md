@@ -104,11 +104,11 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 
 ## Agora
 
-**Próximo: Lab 10 — Módulos** (Bloco 2).
-Stack novo: `terraform/stacks/`. Ainda não iniciado. É "o" lab do objetivo de
-tenant framework — ver [Conectar com objetivo](docs/labs/10-tf-modulos/).
+**Próximo: Lab 11 — State na prática** (Bloco 2, o último do bloco).
+`import`, drift, `moved`, `state rm` — como operar o state sem destruir nada.
+Ainda não iniciado.
 
-**Meta (não promessa):** Labs 10 e 11 até sexta-feira. Depois disso o Track 0
+**Meta (não promessa):** Lab 11 até sexta-feira, fechando o Bloco 2. Depois o Track 0
 "base" está fechado e a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
 (AWS/Azure/OCI) + um gerenciador local unificando nuvem privada (Hyper-V) e
@@ -138,11 +138,11 @@ Pendências que não pertencem a um lab específico:
 |---|---|---|
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
-| 2 — Terraform | 06–11 | 🔶 45/72 |
+| 2 — Terraform | 06–11 | 🔶 58/72 |
 | 3 — Capstone | 12–14 | ⬜ 0/36 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **111/272 (41%)** |
+| **Total** | | **124/272 (46%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -370,8 +370,8 @@ guardrails de `lifecycle`.
 - [x] Testar `create_before_destroy = true` e ver a ordem inverter no plan
 - [x] Testar `ignore_changes = [image]`
 - [x] Testar `prevent_destroy = true` e ler o erro do destroy (depois remover)
-- [ ] `terraform destroy` limpo no final
-- [ ] Notas preenchidas no README
+- [x] `terraform destroy` limpo no final
+- [x] Notas preenchidas no README
 
 > **Conexão com o objetivo:** o mapa do `for_each` é o padrão de tenant —
 > cada entrada é um tenant, adicionar uma linha provisiona um novo, remover
@@ -382,19 +382,19 @@ guardrails de `lifecycle`.
 **Ensina:** empacotar e reutilizar. O módulo encapsula "o que um tenant
 precisa"; os inputs são o que muda por tenant; os outputs são o que o próximo
 estágio consome.
-**Artefatos:** `terraform/modules/webapp/` + `terraform/stacks/web-modular/`
+**Artefatos:** `terraform/modules/webapp/` + `terraform/stacks/web-modules/`
 
-- [ ] Criar `modules/webapp/` com `main.tf`, `variables.tf`, `outputs.tf`
-- [ ] Criar `main.tf` (root) chamando `module "app_a"` e `module "app_b"`
-- [ ] Criar `outputs.tf` (root) expondo `module.app_a.url` / `module.app_b.url`
-- [ ] `terraform init` OK (baixou/registrou os módulos)
-- [ ] `terraform apply` — duas apps no ar
-- [ ] `curl localhost:8091` e `curl localhost:8092` respondem
-- [ ] Testei os 3 formatos de `source` (local aplicado, git/registry só lidos)
-- [ ] Quebrei: módulo novo sem `init` antes → erro
-- [ ] Testei: recurso novo dentro de módulo existente sem `init` → funciona
-- [ ] `terraform destroy` limpo
-- [ ] Notas preenchidas no README
+- [x] Criar `modules/webapp/` com `main.tf`, `variables.tf`, `outputs.tf`
+- [x] Criar `main.tf` (root) chamando `module "app_a"` e `module "app_b"`
+- [x] Criar `outputs.tf` (root) expondo `module.app_a.url` / `module.app_b.url`
+- [x] `terraform init` OK (baixou/registrou os módulos)
+- [x] `terraform apply` — duas apps no ar
+- [x] `curl localhost:8091` e `curl localhost:8092` respondem
+- [x] Testei os 3 formatos de `source` (local aplicado, git/registry só lidos)
+- [x] Quebrei: módulo novo sem `init` antes → erro
+- [x] Testei: recurso novo dentro de módulo existente sem `init` → funciona
+- [x] `terraform destroy` limpo
+- [x] Notas preenchidas no README
 
 > **Conexão com o objetivo: este é *o* lab.** Um tenant = uma chamada de
 > módulo com variáveis diferentes. Corrigir um guardrail no módulo corrige
