@@ -104,9 +104,18 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 
 ## Agora
 
-**Próximo: Lab 11 — State na prática** (Bloco 2, o último do bloco).
-`import`, drift, `moved`, `state rm` — como operar o state sem destruir nada.
-Ainda não iniciado.
+**Em andamento: Lab 11 — State na prática** (Bloco 2, o último do bloco).
+Stack: `terraform/stacks/web-state/`. Parado no meio do exercício de `import`
+(ver checklist abaixo) — retomar por aí, não do zero.
+
+**Onde exatamente parei:** `docker_container.orfao` foi importado com
+sucesso, mas `terraform plan` mostra `must be replaced`. Causa: o container
+real foi criado com `docker run ... nginx` (tag), e o `main.tf` referencia
+`docker_image.nginx.image_id` (o SHA) — Terraform vê como atributo diferente
+e quer recriar. **Não rodar `apply` nesse plan** (destruiria o `orfao`
+recém-importado). Próximo passo: ajustar `image` no `main.tf` pra bater com
+o que foi importado (`image = "nginx"`, a tag literal) até o `plan` ficar
+limpo — esse ajuste É o conteúdo do lab, não um erro a corrigir escondido.
 
 **Meta (não promessa):** Lab 11 até sexta-feira, fechando o Bloco 2. Depois o Track 0
 "base" está fechado e a continuação é outro escopo — ver
@@ -407,10 +416,10 @@ dentro (`import`), detectar drift, renomear sem recriar (`moved`), e remover
 do controle sem apagar (`state rm`).
 **Stack:** `terraform/stacks/` (vários exercícios)
 
-- [ ] Base aplicada (`docker_container.app`)
-- [ ] `terraform state list` / `state show` explorados
-- [ ] Container `orfao` criado fora do Terraform
-- [ ] `terraform import docker_container.orfao <id>` rodou
+- [x] Base aplicada (`docker_container.app`)
+- [x] `terraform state list` / `state show` explorados
+- [x] Container `orfao` criado fora do Terraform
+- [x] `terraform import docker_container.orfao <id>` rodou
 - [ ] Ajustei a config até `terraform plan` ficar vazio para `orfao`
 - [ ] Testei também o bloco `import {}` + `-generate-config-out`
 - [ ] Drift: `docker stop orfao` → `terraform plan` detectou
