@@ -107,11 +107,8 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 **Bloco 2 (Terraform core) fechado — Labs 06 a 11 completos.** Bateu a meta
 antes de sexta.
 
-**Próximo: Lab 12 — A ponte** (Bloco 3, capstone). Packer builda a golden
-image e escreve o manifest; Terraform lê o manifest via `data "local_file"` +
-`jsondecode()` e sobe o container com aquela imagem exata. Pipeline de duas
-etapas funcionando ponta a ponta — o primeiro lab que une os dois blocos.
-Ainda não iniciado.
+**Próximo: Lab 13 — Ambientes** (Bloco 3, capstone). Workspaces vs
+diretórios/módulos para separar `dev`/`prod` de verdade. Ainda não iniciado.
 
 Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
@@ -144,10 +141,10 @@ Pendências que não pertencem a um lab específico:
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
 | 2 — Terraform | 06–11 | ✅ 72/72 |
-| 3 — Capstone | 12–14 | ⬜ 0/36 |
+| 3 — Capstone | 12–14 | 🔶 11/36 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **139/272 (51%)** |
+| **Total** | | **150/272 (55%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -443,18 +440,19 @@ repositório apresentável.
 **Ensina:** o pipeline de duas etapas ponta a ponta — Packer produz a imagem e
 escreve o manifest; Terraform lê o manifest e sobe exatamente aquela imagem.
 **Depende de:** Labs 02 e 05
+**Artefatos:** `packer/templates/capstone-nginx.pkr.hcl` + `packer/files/capstone/default.conf` + `terraform/stacks/capstone-ponte/main.tf`
 
-- [ ] Criar `nginx.conf`, `setup.sh`, `docker.pkr.hcl` (com `post-processor "manifest"`)
-- [ ] `packer build .` gerou `manifest.json`
-- [ ] Criar `terraform/main.tf` lendo o manifest via `data "local_file"` + `jsondecode()`
-- [ ] `terraform apply` subiu o container com a imagem do Packer
-- [ ] `curl localhost:8080` retorna `capstone v1`
-- [ ] Editei `nginx.conf`, rebuild do Packer, `terraform plan` propôs substituir
-- [ ] `terraform apply` e confirmei `capstone v2` no navegador
-- [ ] Quebrei: apaguei `manifest.json`, li o erro do `data` source
-- [ ] Restaurei o manifest e voltei a funcionar
-- [ ] `terraform destroy` limpo
-- [ ] Notas preenchidas no README
+- [x] Criar `default.conf`, `capstone-nginx.pkr.hcl` (reaproveita `packer/scripts/install-nginx.sh`, com `post-processor "manifest"`)
+- [x] `task packer:build IMAGE=capstone-nginx` gerou `packer/manifest.json`
+- [x] Criar `terraform/stacks/capstone-ponte/main.tf` lendo o manifest via `data "local_file"` + `jsondecode()` (por `last_run_uuid`, não posição de array)
+- [x] `terraform apply` subiu o container com a imagem do Packer
+- [x] `curl localhost:8080` retorna `capstone v1`
+- [x] Editei `default.conf`, rebuild do Packer, `terraform plan` propôs substituir
+- [x] `terraform apply` e confirmei `capstone v2` no navegador
+- [x] Quebrei: renomeei `manifest.json` pra `.bak`, li o erro do `data` source
+- [x] Restaurei o manifest e voltei a funcionar
+- [x] `terraform destroy` limpo — state final com 0 recursos
+- [x] Notas preenchidas no README
 
 ### 13-capstone-ambientes
 

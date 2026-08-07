@@ -172,3 +172,21 @@ terraform -chdir=terraform/stacks/capstone-ponte destroy -auto-approve
 ```
 
 ## Notas
+
+- **Pipeline ponta a ponta confirmado:** `task packer:build IMAGE=capstone-nginx`
+  → `terraform apply` → `curl http://localhost:8080` retornou `capstone v1`
+  na primeira tentativa.
+- **O teste v1 → v2 funcionou exatamente como o lab prevê:** editar
+  `default.conf`, rebuildar, e o `terraform plan` detectou a mudança de
+  `local.image_id` e propôs `replace` do container — não `update`. Depois do
+  `apply`, `curl` confirmou `capstone v2`.
+- **`last_run_uuid` provado na prática, não só validado por mim antes:** o
+  `image_id` calculado bateu com o build recém-feito nas duas rodadas
+  (v1 e v2), mesmo com o manifest compartilhado acumulando builds de outros
+  labs — a prova de que casar por `packer_run_uuid` é robusto independente
+  de quantas entradas não-relacionadas existam no arquivo.
+- **Quebre isto confirmado:** renomear `manifest.json` pra `.bak` quebrou o
+  `data "local_file"` antes de qualquer outra coisa ser avaliada, exatamente
+  como o README descreve — Terraform falha rápido, sem chegar perto do
+  `docker_container.app`. Restaurado e `destroy` limpou tudo (state final
+  com 0 recursos).
