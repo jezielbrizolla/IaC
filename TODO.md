@@ -104,24 +104,20 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 
 ## Agora
 
-**Em andamento: Lab 11 — State na prática** (Bloco 2, o último do bloco).
-Stack: `terraform/stacks/web-state/`. Parado no meio do exercício de `import`
-(ver checklist abaixo) — retomar por aí, não do zero.
+**Bloco 2 (Terraform core) fechado — Labs 06 a 11 completos.** Bateu a meta
+antes de sexta.
 
-**Onde exatamente parei:** `docker_container.orfao` foi importado com
-sucesso, mas `terraform plan` mostra `must be replaced`. Causa: o container
-real foi criado com `docker run ... nginx` (tag), e o `main.tf` referencia
-`docker_image.nginx.image_id` (o SHA) — Terraform vê como atributo diferente
-e quer recriar. **Não rodar `apply` nesse plan** (destruiria o `orfao`
-recém-importado). Próximo passo: ajustar `image` no `main.tf` pra bater com
-o que foi importado (`image = "nginx"`, a tag literal) até o `plan` ficar
-limpo — esse ajuste É o conteúdo do lab, não um erro a corrigir escondido.
+**Próximo: Lab 12 — A ponte** (Bloco 3, capstone). Packer builda a golden
+image e escreve o manifest; Terraform lê o manifest via `data "local_file"` +
+`jsondecode()` e sobe o container com aquela imagem exata. Pipeline de duas
+etapas funcionando ponta a ponta — o primeiro lab que une os dois blocos.
+Ainda não iniciado.
 
-**Meta (não promessa):** Lab 11 até sexta-feira, fechando o Bloco 2. Depois o Track 0
-"base" está fechado e a continuação é outro escopo — ver
+Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
 (AWS/Azure/OCI) + um gerenciador local unificando nuvem privada (Hyper-V) e
-pública, alinhado com a vaga-alvo.
+pública, alinhado com a vaga-alvo. A escada de degraus que falta até lá está
+em [`docs/ANALISE-MELHORIAS.md`](docs/ANALISE-MELHORIAS.md).
 
 ## Backlog
 
@@ -147,11 +143,11 @@ Pendências que não pertencem a um lab específico:
 |---|---|---|
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
-| 2 — Terraform | 06–11 | 🔶 58/72 |
+| 2 — Terraform | 06–11 | ✅ 72/72 |
 | 3 — Capstone | 12–14 | ⬜ 0/36 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **124/272 (46%)** |
+| **Total** | | **139/272 (51%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -420,17 +416,17 @@ do controle sem apagar (`state rm`).
 - [x] `terraform state list` / `state show` explorados
 - [x] Container `orfao` criado fora do Terraform
 - [x] `terraform import docker_container.orfao <id>` rodou
-- [ ] Ajustei a config até `terraform plan` ficar vazio para `orfao`
-- [ ] Testei também o bloco `import {}` + `-generate-config-out`
-- [ ] Drift: `docker stop orfao` → `terraform plan` detectou
-- [ ] Testei `-refresh-only` e entendi a diferença
-- [ ] Renomeei `app` → `web`, vi o plan querer destruir/criar
-- [ ] Resolvi com `terraform state mv`
-- [ ] Resolvi (de novo, do zero) com bloco `moved {}`
-- [ ] `terraform state rm docker_container.orfao` — confirmei que o container continua vivo
-- [ ] Sei explicar a diferença entre `state rm` e `destroy`
-- [ ] Limpeza final: `docker rm -f orfao` + `terraform destroy`
-- [ ] Notas preenchidas no README
+- [x] Ajustei a config até `terraform plan` ficar vazio para `orfao`
+- [x] Testei também o bloco `import {}` + `-generate-config-out`
+- [x] Drift: `docker stop orfao` → `terraform plan` detectou
+- [x] Testei `-refresh-only` e entendi a diferença
+- [x] Renomeei `app` → `web`, vi o plan querer destruir/criar
+- [x] Resolvi com `terraform state mv`
+- [x] Resolvi (de novo, do zero) com bloco `moved {}`
+- [x] `terraform state rm docker_container.orfao` — confirmei que o container continua vivo
+- [x] Sei explicar a diferença entre `state rm` e `destroy`
+- [x] Limpeza final: `docker rm -f orfao` + `terraform destroy`
+- [x] Notas preenchidas no README
 
 > **Conexão com o objetivo:** com N tenants, o state fica separado por tenant
 > ou por stack? O que acontece com os outros se o state de um corromper?

@@ -15,23 +15,12 @@ resource "docker_image" "nginx" {
   keep_locally = true
 }
 
-resource "docker_container" "app" {
+resource "docker_container" "web" {
   name  = "lab11-app"
   image = docker_image.nginx.image_id
 }
 
-resource "docker_container" "orfao" {
-  name  = "orfao"
-  image = docker_image.nginx.image_id
-  start = true
-  must_run = true
-  remove_volumes = true
-  logs = false
-  wait = false
-  wait_timeout = 60
-
-  ports {
-    internal = 80
-    external = 9090
-  }
+moved {
+  from = docker_container.app
+  to   = docker_container.web
 }
