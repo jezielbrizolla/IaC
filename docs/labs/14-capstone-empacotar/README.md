@@ -1,106 +1,123 @@
 # Capstone Lab 3 — empacotar como portfólio
 
-> **⚠ Conteúdo pendente de migração de estrutura.**
-> Este README ainda descreve o layout antigo (uma pasta por lab, com
-> `cd` e arquivos soltos). O repo agora usa shape de produção: o código
-> deste lab vai morar em `raiz (Taskfile.yml, CI)`, e os comandos entram por
-> `task` a partir da raiz — sem `cd`. O conteúdo conceitual (HCL, o que
-> cada bloco faz, o "Quebre isto") segue válido; os **caminhos e comandos**
-> serão ajustados quando chegarmos neste lab. Ver [README raiz](../../../README.md).
-
 **~1h · o entregável**
 
 ## Objetivo
-Transformar os labs num repositório público que sustenta a conversa de arquiteto.
-Use o conteúdo de `12-capstone-ponte` como base do que vai virar o repo final
-(ou uma pasta nova `capstone/` copiando o que já funcionou).
+Fazer o pipeline do Lab 12 (`capstone-ponte`) rodar com **um comando**, e
+deixar documentado o bastante pra um estranho clonar o repo e reproduzir sem
+te perguntar nada.
 
-## Scripts a criar
+> Diferente do README original: este repo **já é** o repositório de
+> portfólio (está no GitHub, é o shape de produção desde o início). Não
+> existe "copiar pra uma pasta `capstone/` separada" — o entregável é
+> deixar o pipeline do Lab 12 fácil de rodar e fácil de explicar, dentro
+> do repo que já existe.
 
-`build.ps1`:
-```powershell
-#!/usr/bin/env pwsh
-$ErrorActionPreference = "Stop"
+## Onde o código mora
 
-Write-Host "==> packer init" -ForegroundColor Cyan
-packer init .
+Duas tasks novas em `Taskfile.yml`, na raiz — não scripts soltos. O repo
+inteiro já funciona assim (`task packer:build`, `task tf:apply`, etc.); o
+capstone não deveria ser a exceção que quebra "todo comando entra por
+`task`".
 
-Write-Host "==> packer validate" -ForegroundColor Cyan
-packer validate .
+## Tasks a criar
 
-Write-Host "==> packer build" -ForegroundColor Cyan
-packer build .
+`capstone:build` — builda a imagem e sobe o container, os dois comandos do
+Lab 12 em sequência:
 
-Write-Host "==> terraform init" -ForegroundColor Cyan
-Push-Location terraform
-terraform init
-
-Write-Host "==> terraform plan" -ForegroundColor Cyan
-terraform plan -out=tfplan
-
-Write-Host "==> terraform apply" -ForegroundColor Cyan
-terraform apply -auto-approve tfplan
-Pop-Location
-
-Write-Host "==> pronto: http://localhost:8080" -ForegroundColor Green
+```yaml
+capstone:build:
+  desc: "Roda o pipeline completo do capstone: Packer builda, Terraform sobe"
+  cmds:
+    - task: packer:build
+      vars: { IMAGE: capstone-nginx }
+    - terraform -chdir=terraform/stacks/capstone-ponte init
+    - terraform -chdir=terraform/stacks/capstone-ponte apply -auto-approve
 ```
 
-`destroy.ps1`:
-```powershell
-#!/usr/bin/env pwsh
-$ErrorActionPreference = "Stop"
+`capstone:destroy` — desfaz e limpa:
 
-Push-Location terraform
-terraform destroy -auto-approve
-Pop-Location
-
-Write-Host "==> removendo imagens locais geradas" -ForegroundColor Cyan
-docker images --filter "reference=meuapp*" -q | ForEach-Object { docker rmi -f $_ }
-Remove-Item -ErrorAction SilentlyContinue manifest.json, terraform\tfplan
+```yaml
+capstone:destroy:
+  desc: "Destrói o container do capstone (a limpeza de imagem já existe: task clean)"
+  cmds:
+    - terraform -chdir=terraform/stacks/capstone-ponte destroy -auto-approve
 ```
+
+Repare que **não precisa reinventar** a limpeza de imagem: o template
+`capstone-nginx.pkr.hcl` não tem `post-processor "docker-tag"` (só
+`commit = true`), então a imagem gerada fica sem tag — exatamente o que
+`task clean` (`docker image prune -f`) já remove. Rode `task clean` depois
+de `capstone:destroy` se quiser limpar a imagem também, em vez de duplicar
+lógica de filtro por nome de imagem que nem existe aqui.
+
+> Confira a sintaxe (`cmds:`, `dir:`, `preconditions:`) contra as tasks que
+> já existem no arquivo — copie o estilo que já está lá, não invente um
+> novo. E lembre: `cmds` é interpretado por shell POSIX (`mvdan/sh`), não
+> PowerShell, mesmo no Windows — nada de `Get-ChildItem`/`ForEach-Object`
+> direto num `cmds:` (é o comentário que já existe em `packer:validate`).
 
 ## Checklist do conteúdo
-- [ ] `README.md` com: o que é, por que existe, como rodar em 3 comandos
-- [ ] Diagrama mermaid do fluxo (Packer → manifest → Terraform → container)
-- [ ] `build.ps1` rodando a cadeia inteira
-- [ ] `destroy.ps1` limpando tudo, inclusive as imagens geradas
-- [ ] `.terraform.lock.hcl` **versionado** (confira: `git check-ignore -v terraform/.terraform.lock.hcl` não deve retornar nada)
-- [ ] Versões pinadas: `required_providers`, plugin do Packer (`~> 1`), `required_version` do Terraform
-- [ ] Seção "próximos passos: AWS" com a tabela de tradução do Bloco 4 do HTML
+
+- [ ] `task capstone:build` roda a cadeia inteira (Packer + Terraform) com
+      um comando só
+- [ ] `task capstone:destroy` destrói o container; `task clean` (já existe)
+      limpa a imagem sem tag gerada pelo build
+- [ ] Diagrama mermaid do fluxo no README do Lab 12 (Packer → manifest →
+      Terraform → container) — ou aqui, referenciando o Lab 12
+- [ ] `.terraform.lock.hcl` **versionado**: confira
+      `git check-ignore -v terraform/stacks/capstone-ponte/.terraform.lock.hcl`
+      — não deve retornar nada (se retornar, o arquivo está sendo ignorado
+      por engano)
+- [ ] Versões pinadas: `required_providers` do stack, plugin do Packer
+      (`~> 1`), `required_version` do Terraform — todos já deveriam estar
+      certos desde o Lab 12, só confirme
+- [ ] Seção "próximos passos: multi-cloud" no README do Lab 12 ou aqui,
+      linkando pra [`docs/PROXIMO-TRACK.md`](../PROXIMO-TRACK.md) em vez da
+      tabela antiga de tradução pra AWS — o próximo track já cobre isso em
+      mais detalhe (AWS + Azure + OCI, não só AWS)
 
 ## Diagrama sugerido
+
 ```mermaid
 flowchart LR
-  A[setup.sh + nginx.conf] --> B[packer build]
-  B --> C[imagem local]
-  B --> D[manifest.json]
+  A[install-nginx.sh + default.conf] --> B[task packer:build]
+  B --> C[imagem Docker local]
+  B --> D[packer/manifest.json]
   D --> E[terraform apply]
   C --> E
-  E --> F[container rodando]
+  E --> F[container rodando :8080]
 ```
 
 ## Rodar
+
+Da raiz `labs/`:
+
 ```powershell
-.\build.ps1
+task capstone:build
 curl http://localhost:8080
-.\destroy.ps1
+task capstone:destroy
+task clean
 ```
 
 ## O critério real
-Um estranho clona o repo, roda `.\build.ps1` e tem a coisa funcionando
-**sem te perguntar nada**. Se precisar de você para explicar, o README não está pronto.
-Peça pra alguém (ou releia você mesmo em outro dia, "a frio") seguir só o README.
+Um estranho clona o repo, roda `task capstone:build` e tem a coisa
+funcionando **sem te perguntar nada**. Se precisar de você para explicar, o
+README do Lab 12 não está pronto. Peça pra alguém (ou releia você mesmo em
+outro dia, "a frio") seguir só o README.
 
 ## Publicar
+
 ```powershell
 git add -A
-git commit -m "Capstone: pipeline Packer -> Terraform completo, local-first"
+git commit -m "Capstone: task capstone:build/destroy para o pipeline Packer -> Terraform"
 git push
 ```
 
 ## Por que isto vale
-O `plano-certificacoes-completo.html` chama isto de capstone e diz que
-"vale tanto quanto uma cert numa entrevista de arquiteto". Esta é a versão
-local — entregável agora, e que depois só cresce trocando Docker por AWS.
+Isso é o argumento concreto de portfólio: não é "eu sei Terraform", é "eu
+projetei um framework que qualquer pessoa do time roda com um comando" —
+literalmente o que a vaga-alvo pede ("plataformas de automação
+self-service... frameworks reutilizáveis de infraestrutura como código").
 
 ## Notas

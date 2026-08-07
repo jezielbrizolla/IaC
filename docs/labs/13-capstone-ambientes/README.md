@@ -1,21 +1,26 @@
 # Capstone Lab 2 — dois ambientes
 
-> **⚠ Conteúdo pendente de migração de estrutura.**
-> Este README ainda descreve o layout antigo (uma pasta por lab, com
-> `cd` e arquivos soltos). O repo agora usa shape de produção: o código
-> deste lab vai morar em `terraform/envs/{dev,prod}/ + terraform/modules/`, e os comandos entram por
-> `task` a partir da raiz — sem `cd`. O conteúdo conceitual (HCL, o que
-> cada bloco faz, o "Quebre isto") segue válido; os **caminhos e comandos**
-> serão ajustados quando chegarmos neste lab. Ver [README raiz](../../../README.md).
-
 **~1h**
 
 ## Objetivo
 Rodar a mesma stack em `dev` e `prod`, e entender os limites de workspace.
 
+> **Conexão com o objetivo:** isolamento por diretório/backend é o padrão que
+> escala para isolamento por tenant.
+
+## Onde o código mora
+
+- **Parte 1:** `terraform/stacks/capstone-ambientes-ws/` — stack novo,
+  usa `terraform workspace`.
+- **Parte 3:** `terraform/envs/dev/` + `terraform/envs/prod/`, os dois
+  chamando o **mesmo módulo `terraform/modules/webapp/`** já criado no
+  Lab 10 — nada novo pra escrever ali, só duas chamadas com parâmetros
+  diferentes.
+
 ## Parte 1 — workspaces
 
-`main.tf`:
+`terraform/stacks/capstone-ambientes-ws/main.tf`:
+
 ```hcl
 terraform {
   required_version = ">= 1.5"
@@ -57,48 +62,60 @@ output "url" {
 }
 ```
 
-`dev.tfvars`:
+`terraform/stacks/capstone-ambientes-ws/dev.tfvars`:
+
 ```hcl
 external_port = 8081
 ```
 
-`prod.tfvars`:
+`terraform/stacks/capstone-ambientes-ws/prod.tfvars`:
+
 ```hcl
 external_port = 8082
 ```
 
+Da raiz `labs/`:
+
 ```powershell
-cd labs\13-capstone-ambientes
-terraform init
-terraform workspace new dev
-terraform workspace new prod
-terraform workspace list
+terraform -chdir=terraform/stacks/capstone-ambientes-ws init
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace new dev
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace new prod
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace list
 
-terraform workspace select dev
-terraform apply -auto-approve -var-file="dev.tfvars"
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select dev
+terraform -chdir=terraform/stacks/capstone-ambientes-ws apply -auto-approve -var-file="dev.tfvars"
 
-terraform workspace select prod
-terraform apply -auto-approve -var-file="prod.tfvars"
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select prod
+terraform -chdir=terraform/stacks/capstone-ambientes-ws apply -auto-approve -var-file="prod.tfvars"
 
-Get-ChildItem terraform.tfstate.d
+Get-ChildItem terraform\stacks\capstone-ambientes-ws\terraform.tfstate.d
 ```
+
 Confirme que existe um state por workspace, e que os dois containers
 (`lab13-dev` e `lab13-prod`) estão rodando ao mesmo tempo.
 
 ## Parte 2 — a armadilha (o ponto do lab)
+
 Workspaces compartilham:
+
 - o **mesmo backend** (mesma conta/bucket)
 - as **mesmas credenciais**
 - o **mesmo código**, sem chance de divergir
 
 Ou seja: um `terraform workspace select` errado aplica em prod achando que era
 dev, e não existe barreira de permissão entre os dois. Reproduza o risco:
+
 ```powershell
-terraform workspace select prod
-terraform apply -auto-approve -var-file="dev.tfvars"   # "esqueceu" de trocar o tfvars
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select prod
+terraform -chdir=terraform/stacks/capstone-ambientes-ws apply -auto-approve -var-file="dev.tfvars"
 ```
+
 Você acabou de aplicar a config de dev no workspace de prod sem nenhum aviso.
-Desfaça: `terraform apply -auto-approve -var-file="prod.tfvars"`.
+Desfaça:
+
+```powershell
+terraform -chdir=terraform/stacks/capstone-ambientes-ws apply -auto-approve -var-file="prod.tfvars"
+```
 
 Por isso o padrão de mercado para prod/non-prod **não** é workspace, e sim
 **diretórios + backends + credenciais separados**, com o código comum vivendo
@@ -107,58 +124,8 @@ testes, sandbox pessoal.
 
 ## Parte 3 — refaça do jeito certo
 
-```text
-13-capstone-ambientes/
-├── modules/
-│   └── stack/
-│       ├── main.tf        # o resource docker_container, parametrizado
-│       ├── variables.tf
-│       └── outputs.tf
-└── envs/
-    ├── dev/
-    │   ├── main.tf        # module "stack" { source = "../../modules/stack" ... }
-    │   └── terraform.tfvars
-    └── prod/
-        ├── main.tf
-        └── terraform.tfvars
-```
+`terraform/envs/dev/main.tf`:
 
-`modules/stack/variables.tf`:
-```hcl
-variable "name" {
-  type = string
-}
-variable "external_port" {
-  type = number
-}
-```
-
-`modules/stack/main.tf`:
-```hcl
-resource "docker_image" "nginx" {
-  name         = "nginx:latest"
-  keep_locally = true
-}
-
-resource "docker_container" "web" {
-  name  = var.name
-  image = docker_image.nginx.image_id
-
-  ports {
-    internal = 80
-    external = var.external_port
-  }
-}
-```
-
-`modules/stack/outputs.tf`:
-```hcl
-output "url" {
-  value = "http://localhost:${var.external_port}"
-}
-```
-
-`envs/dev/main.tf`:
 ```hcl
 terraform {
   required_version = ">= 1.5"
@@ -170,49 +137,58 @@ terraform {
 provider "docker" {}
 
 module "stack" {
-  source        = "../../modules/stack"
-  name          = "lab13-dev"
-  external_port = 8081
+  source = "../../modules/webapp"
+  name   = "lab13-dev"
+  port   = 8081
 }
 
 output "url" {
   value = module.stack.url
 }
 ```
-`envs/prod/main.tf` é o mesmo trocando `name = "lab13-prod"` e `external_port = 8082`.
+
+`terraform/envs/prod/main.tf` é o mesmo, trocando `name = "lab13-prod"` e
+`port = 8082`.
 
 ```powershell
-terraform workspace select default
-cd envs\dev
-terraform init
-terraform apply -auto-approve
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select default
 
-cd ..\prod
-terraform init
-terraform apply -auto-approve
+terraform -chdir=terraform/envs/dev init
+terraform -chdir=terraform/envs/dev apply -auto-approve
+
+terraform -chdir=terraform/envs/prod init
+terraform -chdir=terraform/envs/prod apply -auto-approve
 ```
+
 Note: cada pasta tem seu **próprio** `.terraform/` e (num cenário real) seu
 próprio backend — a chance de aplicar dev em prod por engano fica estruturalmente
-mais difícil, não só uma questão de atenção.
+mais difícil, não só uma questão de atenção. E o módulo é o **mesmo** do
+Lab 10 — a prova de que "empacotar uma vez, chamar várias" funciona tanto
+pra múltiplas instâncias no mesmo ambiente (Lab 10) quanto pra ambientes
+inteiros diferentes (aqui).
 
 ## Anote
-Essa conclusão reaparece no **Track 4 do plano de ramp-up multi-cloud** (state por
-tenant). Escreva agora, com suas palavras, por que você separaria por diretório —
-é resposta de entrevista.
-
-## Limpeza
-```powershell
-cd envs\dev; terraform destroy -auto-approve
-cd ..\prod; terraform destroy -auto-approve
-cd ..\..
-terraform workspace select dev; terraform destroy -auto-approve -var-file="dev.tfvars"
-terraform workspace select prod; terraform destroy -auto-approve -var-file="prod.tfvars"
-terraform workspace select default
-terraform workspace delete dev
-terraform workspace delete prod
-```
+Essa conclusão reaparece no próximo track (provisionamento multi-cloud — ver
+[`docs/PROXIMO-TRACK.md`](../PROXIMO-TRACK.md), pergunta em aberto sobre
+isolamento de state por tenant×provider). Escreva agora, com suas palavras,
+por que você separaria por diretório — é resposta de entrevista.
 
 ## Critério de conclusão
 Você fez das duas formas e sabe defender a segunda numa conversa técnica.
+
+## Limpeza
+
+```powershell
+terraform -chdir=terraform/envs/dev destroy -auto-approve
+terraform -chdir=terraform/envs/prod destroy -auto-approve
+
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select dev
+terraform -chdir=terraform/stacks/capstone-ambientes-ws destroy -auto-approve -var-file="dev.tfvars"
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select prod
+terraform -chdir=terraform/stacks/capstone-ambientes-ws destroy -auto-approve -var-file="prod.tfvars"
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select default
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace delete dev
+terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace delete prod
+```
 
 ## Notas
