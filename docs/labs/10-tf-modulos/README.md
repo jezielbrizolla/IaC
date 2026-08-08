@@ -5,19 +5,83 @@
 ## Objetivo
 Empacotar e reutilizar.
 
-## Onde o código mora
-`terraform/modules/webapp/` (o módulo) + `terraform/stacks/web-modules/`
-(o root que o chama duas vezes).
+## Teoria
+
+**Módulo é a unidade reutilizável do Terraform — o equivalente a uma função.**
+Você tem um conjunto de recursos que sempre andam juntos (container + rede +
+volume). Em vez de copiar esse bloco toda vez que precisar de mais uma
+instância, você empacota uma vez e **chama** com parâmetros diferentes.
+
+A analogia com função é literal:
+
+| Função | Módulo |
+|---|---|
+| Parâmetros | `variable` |
+| Corpo | os `resource` dentro do módulo |
+| Retorno | `output` |
+| Chamada | bloco `module "nome" { ... }` |
+
+**O ganho real não é escrever menos — é corrigir em um lugar só.** Se você
+descobre que faltou um guardrail (uma política de restart, um limite de
+memória, uma tag obrigatória), corrige **no módulo** e todos os chamadores
+herdam. Com blocos copiados, você teria que caçar cada cópia — e esquecer uma
+é o normal.
 
 > **Conexão com o objetivo: este é *o* lab.** Um tenant = uma chamada de
 > módulo com variáveis diferentes. Corrigir um guardrail no módulo corrige
-> em todos os tenants de uma vez.
+> em todos os tenants de uma vez. Todo o resto do Track 0 aponta pra cá.
 
-## Arquivos
+**Quem configura o provider é sempre quem chama.** O módulo declara do que
+*precisa* (`required_providers`), mas não configura *como* conectar
+(`provider "docker" {}`). Isso fica no root. A razão: um módulo não deve
+decidir em qual conta, região ou host ele roda — quem chama decide. Um
+`provider {}` vazio dentro do módulo é sintaxe antiga e o Terraform avisa
+(ver "Quebre isto" nº 3).
 
-`terraform/modules/webapp/variables.tf`:
+**`source` — de onde vem o módulo.** Três formatos:
 
-```hcl
+| Formato | Exemplo | Quando |
+|---|---|---|
+| Local | `"../../modules/webapp"` | módulo no mesmo repo |
+| Git | `"git::https://…//modules/webapp?ref=v1.0.0"` | compartilhado entre repos |
+| Registry | `"terraform-aws-modules/vpc/aws"` + `version` | módulo publicado |
+
+**Sempre pinar versão** em git (`?ref=`) e registry (`version =`). Módulo sem
+pin é build não-reproduzível: o que funcionou hoje pode quebrar amanhã porque
+alguém mexeu no módulo remoto.
+
+**`terraform init` e módulos:** adicionar uma *referência de módulo nova* exige
+`init` de novo (o Terraform precisa copiar o módulo pro `.terraform/`). Mas
+mudar o *conteúdo* de um módulo já inicializado, não — é exatamente a
+distinção que o "Quebre isto" nº 1 e nº 2 exploram.
+
+## O que vamos criar
+
+`terraform/modules/webapp/` (o módulo, 3 arquivos) +
+`terraform/stacks/web-modules/` (o root que o chama duas vezes, 2 arquivos).
+
+Repare no `source = "../../modules/webapp"` — caminho relativo **do stack até
+o módulo**, não do repo. `terraform/stacks/web-modules/` → sobe dois níveis →
+`terraform/modules/webapp/`.
+
+## Passo 1 — criar o módulo e o stack
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+# --- O MÓDULO (a unidade reutilizável) ---
+
+Write-RepoFile "terraform/modules/webapp/variables.tf" @'
 variable "name" {
   type = string
 }
@@ -25,11 +89,9 @@ variable "name" {
 variable "port" {
   type = number
 }
-```
+'@
 
-`terraform/modules/webapp/main.tf`:
-
-```hcl
+Write-RepoFile "terraform/modules/webapp/main.tf" @'
 terraform {
   required_providers {
     docker = {
@@ -70,11 +132,9 @@ resource "docker_container" "app" {
     external = var.port
   }
 }
-```
+'@
 
-`terraform/modules/webapp/outputs.tf`:
-
-```hcl
+Write-RepoFile "terraform/modules/webapp/outputs.tf" @'
 output "url" {
   value = "http://localhost:${var.port}"
 }
@@ -82,11 +142,11 @@ output "url" {
 output "container_id" {
   value = docker_container.app.id
 }
-```
+'@
 
-`terraform/stacks/web-modules/main.tf` (o root que chama o módulo):
+# --- O ROOT (quem chama o módulo duas vezes) ---
 
-```hcl
+Write-RepoFile "terraform/stacks/web-modules/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -110,11 +170,9 @@ module "app_b" {
   name   = "lab10-app-b"
   port   = 8092
 }
-```
+'@
 
-`terraform/stacks/web-modules/outputs.tf`:
-
-```hcl
+Write-RepoFile "terraform/stacks/web-modules/outputs.tf" @'
 output "app_a_url" {
   value = module.app_a.url
 }
@@ -122,18 +180,10 @@ output "app_a_url" {
 output "app_b_url" {
   value = module.app_b.url
 }
+'@
 ```
 
-Repare em duas coisas de convenção:
-
-- `source = "../../modules/webapp"` — caminho relativo **do stack até o
-  módulo**, não do repo. `terraform/stacks/web-modules/` → sobe dois níveis
-  → `terraform/modules/webapp/`.
-- Só o **root** (`stacks/web-modules/main.tf`) declara `provider "docker" {}`
-  de verdade. O módulo declara só `required_providers` — quem configura o
-  provider é sempre quem chama, nunca o módulo. Ver "Quebre isto" nº 3.
-
-## Rodar
+## Passo 2 — rodar
 
 Da raiz `labs/`:
 
@@ -145,16 +195,9 @@ curl http://localhost:8091
 curl http://localhost:8092
 ```
 
-## Entenda `source`
-
-Você usou o formato local acima. Conheça os outros dois (só leia a sintaxe,
-não precisa aplicar):
-
-- git: `source = "git::https://github.com/user/repo.git//modules/webapp?ref=v1.0.0"`
-- registry: `source = "terraform-aws-modules/vpc/aws"` + `version = "~> 5.0"`
-
-**Sempre pinar versão** em git (`?ref=`) e registry (`version =`).
-Módulo sem pin é build não-reproduzível.
+Duas aplicações no ar, em portas diferentes, cada uma com sua própria rede e
+volume — **saindo do mesmo módulo**. O `output` do root vem dos `output` do
+módulo, repassados.
 
 ## Quebre isto
 
