@@ -122,7 +122,7 @@ source "hyperv-iso" "win2022" {
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
   boot_wait    = "0s"
-  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar>"]
+  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1>"]
 
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer shutdown\""
   shutdown_timeout = "5m"
@@ -284,16 +284,20 @@ que mais costuma variar de máquina pra máquina.
 > dobrar (`\\`) pra representar uma barra literal. Barra normal (`/`)
 > funciona igual no Windows e evita esse detalhe todo.
 >
-> **Por que `boot_command` manda espaço várias vezes:** mídia de instalação
-> UEFI mostra "Press any key to boot from CD or DVD..." por uma janela bem
-> curta — sem apertar a tempo, o firmware desiste e tenta o próximo
-> dispositivo (PXE, depois disco vazio), e a VM nunca chega no Windows
-> Setup. A primeira tentativa (`boot_wait = "5s"` + um único espaço) chegou
-> tarde demais — a VM já tinha avançado pro PXE. A correção: `boot_wait =
-> "0s"` (manda a primeira tecla assim que a VM liga) + oito espaços, um por
-> segundo, cobrindo os primeiros ~8s do boot em vez de apostar num instante
-> exato. Timing de boot não dá pra validar sem rodar de verdade — se ainda
-> cair em PXE, o próximo ajuste é mandar mais repetições, ou por mais tempo.
+> **Por que `boot_command` manda espaço 60 vezes:** mídia de instalação UEFI
+> mostra "Press any key to boot from CD or DVD..." por uma janela bem curta
+> — sem apertar a tempo, o firmware desiste e tenta o próximo dispositivo
+> (PXE, depois disco vazio). Duas tentativas mais enxutas falharam
+> (`boot_wait = "5s"` + 1 tecla; depois `boot_wait = "0s"` + 8 teclas em 8s)
+> — em ambas a VM foi pro PXE mesmo assim, mesmo com a transição da tela
+> preta pro PXE levando **menos de 5 segundos** segundo observação real.
+> Isso aponta pra latência de conexão do teclado virtual (`vmconnect`)
+> comendo a janela inteira antes da primeira tecla sequer chegar — não
+> adianta ajustar o instante, porque nenhuma tecla está sendo entregue a
+> tempo. Quando isso acontece, o firmware Gen2 tende a **ciclar** (PXE
+> falha → disco vazio falha → tenta o DVD de novo), então a estratégia
+> muda: insistir mandando espaço por bastante tempo (60s aqui) pra pegar
+> uma dessas voltas do ciclo, em vez de acertar um instante exato.
 
 ## Passo 2 — rodar o build
 
