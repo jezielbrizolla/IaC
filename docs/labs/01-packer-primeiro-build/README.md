@@ -64,7 +64,17 @@ Ele tem três blocos, cada um com um papel:
 Um script, cria tudo. Rode da raiz `labs/`:
 
 ```powershell
-Set-Content -Path "packer/templates/ubuntu-base.pkr.hcl" -Encoding UTF8 -Value @'
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `packer fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "packer/templates/ubuntu-base.pkr.hcl" @'
 # Imagem base Ubuntu — sem provisionamento, só a base commitada.
 # Piso das demais imagens e smoke test do toolchain.
 #

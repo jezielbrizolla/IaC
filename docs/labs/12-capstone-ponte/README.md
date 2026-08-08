@@ -192,7 +192,7 @@ terraform -chdir=terraform/stacks/capstone-ponte apply -auto-approve
 curl http://localhost:8080
 ```
 
-## O teste que prova que funcionou
+## Passo 3 — o teste que prova que funcionou
 
 1. Com o container no ar, edite `packer/files/capstone/default.conf`
    (troque `capstone v1` por `capstone v2`).
@@ -225,7 +225,7 @@ Um comando de Packer + um de Terraform, e a mudança de conteúdo aparece no nav
 
 Este pipeline (Packer builda → manifest → Terraform consome) é o padrão
 inteiro que se repete trocando só o provider. O próximo track do repo — ver
-[`docs/PROXIMO-TRACK.md`](../PROXIMO-TRACK.md) — generaliza exatamente isto
+[`docs/PROXIMO-TRACK.md`](../../PROXIMO-TRACK.md) — generaliza exatamente isto
 para AWS, Azure e Oracle Cloud (OCI): `source "docker"` vira `amazon-ebs` /
 `azure-arm` / `oci-...`, o `docker_container` vira `aws_instance` /
 `azurerm_linux_virtual_machine` / o equivalente OCI, e o `manifest.json` como

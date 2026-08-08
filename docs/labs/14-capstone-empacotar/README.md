@@ -7,7 +7,6 @@ Fazer o pipeline do Lab 12 (`capstone-ponte`) rodar com **um comando**, e
 deixar documentado o bastante pra um estranho clonar o repo e reproduzir sem
 te perguntar nada.
 
-
 ## Teoria
 
 **O que "empacotar" significa aqui.** O pipeline do Lab 12 funciona — mas
@@ -128,7 +127,7 @@ entregável do lab.
       (`~> 1`), `required_version` do Terraform — todos já deveriam estar
       certos desde o Lab 12, só confirme
 - [ ] Seção "próximos passos: multi-cloud" no README do Lab 12 ou aqui,
-      linkando pra [`docs/PROXIMO-TRACK.md`](../PROXIMO-TRACK.md) em vez da
+      linkando pra [`docs/PROXIMO-TRACK.md`](../../PROXIMO-TRACK.md) em vez da
       tabela antiga de tradução pra AWS — o próximo track já cobre isso em
       mais detalhe (AWS + Azure + OCI, não só AWS)
 
@@ -144,11 +143,21 @@ flowchart LR
   E --> F[container rodando :8080]
 ```
 
-## O critério real
+## Critério de conclusão
 Um estranho clona o repo, roda `task capstone:build` e tem a coisa
 funcionando **sem te perguntar nada**. Se precisar de você para explicar, o
 README do Lab 12 não está pronto. Peça pra alguém (ou releia você mesmo em
 outro dia, "a frio") seguir só o README.
+
+## Limpeza
+
+As próprias tasks que você acabou de criar são a limpeza — é justamente o
+ponto do lab:
+
+```powershell
+task capstone:destroy
+task clean
+```
 
 ## Publicar
 

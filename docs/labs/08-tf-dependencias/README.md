@@ -119,7 +119,7 @@ terraform -chdir=terraform/stacks/web-network apply -auto-approve
 Repare na ordem do `apply`: imagem, rede e volume primeiro (em paralelo, são
 independentes entre si), container por último.
 
-## Ver o grafo
+## Passo 3 — ver o grafo
 
 `terraform graph` gera o grafo em formato DOT. Funciona **sem precisar de
 apply** — ele lê da config, não do state. Mas precisa de `init` antes (precisa
@@ -143,7 +143,7 @@ A seta `A -> B` significa "A depende de B", ou seja, **B é criado antes de A**.
 Para ver desenhado, cole o conteúdo de `graph.dot` em
 <https://dreampuf.github.io/GraphvizOnline>.
 
-## O experimento — trocar para `depends_on` explícito
+## Passo 4 — o experimento: `depends_on` explícito
 
 Substitua o bloco do container por esta versão, que remove as referências de
 atributo e declara a ordem na mão:

@@ -239,7 +239,7 @@ inteiros diferentes (aqui).
 
 ## Anote
 Essa conclusão reaparece no próximo track (provisionamento multi-cloud — ver
-[`docs/PROXIMO-TRACK.md`](../PROXIMO-TRACK.md), pergunta em aberto sobre
+[`docs/PROXIMO-TRACK.md`](../../PROXIMO-TRACK.md), pergunta em aberto sobre
 isolamento de state por tenant×provider). Escreva agora, com suas palavras,
 por que você separaria por diretório — é resposta de entrevista.
 
