@@ -105,10 +105,13 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 ## Agora
 
 **Bloco 2 (Terraform core) fechado — Labs 06 a 11 completos.** Bateu a meta
-antes de sexta.
+antes de sexta. Labs 12 e 13 também fechados.
 
-**Próximo: Lab 13 — Ambientes** (Bloco 3, capstone). Workspaces vs
-diretórios/módulos para separar `dev`/`prod` de verdade. Ainda não iniciado.
+**Falta só a limpeza do Lab 13** (`terraform destroy` em `envs/dev` e
+`envs/prod` + deletar os workspaces `dev`/`prod` do stack da Parte 1) antes
+de seguir pro **Lab 14 — Empacotar** (Bloco 3, o entregável). Cria as tasks
+`capstone:build`/`capstone:destroy` no `Taskfile.yml` — é o próprio conteúdo
+do lab, não script pronto.
 
 Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
@@ -140,11 +143,11 @@ Pendências que não pertencem a um lab específico:
 |---|---|---|
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
-| 2 — Terraform | 06–11 | ✅ 72/72 |
-| 3 — Capstone | 12–14 | 🔶 11/36 |
+| 2 — Terraform | 06–11 | ✅ 73/73 |
+| 3 — Capstone | 12–14 | 🔶 24/37 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **150/272 (55%)** |
+| **Total** | | **163/273 (60%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -459,21 +462,22 @@ escreve o manifest; Terraform lê o manifest e sobe exatamente aquela imagem.
 **Ensina:** separar ambientes de verdade — e por que `terraform workspace`
 **não** é a resposta para prod/non-prod (workspaces compartilham backend e
 credencial; um `select` errado aplica em prod sem aviso).
-**Artefatos:** `terraform/envs/{dev,prod}/` + `terraform/modules/`
+**Artefatos:** `terraform/stacks/capstone-ambientes-ws/` (Parte 1) + `terraform/envs/{dev,prod}/` reaproveitando `terraform/modules/webapp/` do Lab 10 (Parte 3)
 
-- [ ] Criar `main.tf` usando `terraform.workspace`
-- [ ] Criar `dev.tfvars` e `prod.tfvars`
-- [ ] `terraform workspace new dev` / `new prod`
-- [ ] Apply em `dev` com `dev.tfvars`
-- [ ] Apply em `prod` com `prod.tfvars`
-- [ ] Confirmei `terraform.tfstate.d/` com um state por workspace
-- [ ] Reproduzi a armadilha: selecionei `prod` e apliquei `dev.tfvars` por engano
-- [ ] Entendi por que não há barreira estrutural entre workspaces
-- [ ] Criei a estrutura `modules/stack/` + `envs/dev/` + `envs/prod/`
-- [ ] Apply funcionando nos dois diretórios separados
-- [ ] Conclusão sobre "por que diretório > workspace para prod/non-prod" anotada nas Notas
+- [x] Criar `main.tf` usando `terraform.workspace`
+- [x] Criar `dev.tfvars` e `prod.tfvars`
+- [x] `terraform workspace new dev` / `new prod`
+- [x] Apply em `dev` com `dev.tfvars`
+- [x] Apply em `prod` com `prod.tfvars`
+- [x] Confirmei `terraform.tfstate.d/` com um state por workspace
+- [x] Reproduzi a armadilha: selecionei `prod` e apliquei `dev.tfvars` por engano
+- [x] Entendi por que não há barreira estrutural entre workspaces (prod ficou fora do ar de verdade — conflito de porta com o container real de dev)
+- [x] Destruí a Parte 1/2 antes da Parte 3 (nomes literais colidem com o Docker real — achado durante o lab, não previsto no README original)
+- [x] Criei `envs/dev/` + `envs/prod/` reaproveitando `modules/webapp/` (sem módulo novo)
+- [x] Apply funcionando nos dois diretórios separados, confirmado por evidência (`docker ps` + state com 4 recursos cada)
+- [x] Conclusão sobre "por que diretório > workspace para prod/non-prod" anotada nas Notas
 - [ ] Limpeza completa (destroy nos dois modelos, workspaces deletados)
-- [ ] Notas preenchidas no README
+- [x] Notas preenchidas no README
 
 > **Conexão com o objetivo:** isolamento por diretório/backend é o padrão que
 > escala para isolamento por tenant.

@@ -124,6 +124,22 @@ testes, sandbox pessoal.
 
 ## Parte 3 — refaça do jeito certo
 
+> **Destrua a Parte 1/2 antes de continuar.** Os containers `lab13-dev` e
+> `lab13-prod` da Parte 1 usam os **mesmos nomes literais** que a Parte 3
+> vai criar — e o Docker é um daemon único e compartilhado, sem noção de
+> "isso veio de um state diferente". Se não destruir agora, o `apply` da
+> Parte 3 falha com `Conflict: the container name ... is already in use`,
+> porque o nome já está ocupado por um recurso de um state completamente
+> diferente:
+>
+> ```powershell
+> terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select dev
+> terraform -chdir=terraform/stacks/capstone-ambientes-ws destroy -auto-approve -var-file="dev.tfvars"
+> terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select prod
+> terraform -chdir=terraform/stacks/capstone-ambientes-ws destroy -auto-approve -var-file="prod.tfvars"
+> terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select default
+> ```
+
 `terraform/envs/dev/main.tf`:
 
 ```hcl
@@ -178,17 +194,40 @@ Você fez das duas formas e sabe defender a segunda numa conversa técnica.
 
 ## Limpeza
 
+A Parte 1/2 já foi destruída antes da Parte 3 (passo acima) — só sobra
+remover os workspaces vazios e a Parte 3:
+
 ```powershell
 terraform -chdir=terraform/envs/dev destroy -auto-approve
 terraform -chdir=terraform/envs/prod destroy -auto-approve
 
-terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select dev
-terraform -chdir=terraform/stacks/capstone-ambientes-ws destroy -auto-approve -var-file="dev.tfvars"
-terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select prod
-terraform -chdir=terraform/stacks/capstone-ambientes-ws destroy -auto-approve -var-file="prod.tfvars"
-terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select default
 terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace delete dev
 terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace delete prod
 ```
 
 ## Notas
+
+- **Parte 1 confirmada com evidência, não só pelo output:** `lab13-dev`
+  (8081) e `lab13-prod` (8082) rodando ao mesmo tempo, cada workspace com
+  seu próprio state em `terraform.tfstate.d/` (2 recursos gerenciados cada).
+- **Parte 2 foi mais dramática que o roteiro previa.** Aplicar `dev.tfvars`
+  no workspace `prod` não só "confundiu a config" — mudou a porta
+  (`external`), que força `replace` do container. O Terraform destruiu o
+  `lab13-prod` antigo e falhou ao criar o novo: a porta 8081 já estava
+  ocupada pelo `lab13-dev` de verdade, rodando fora dessa mesma operação.
+  Resultado: **prod ficou fora do ar** (`docker ps` mostrou `lab13-prod` em
+  `Created`, não `Up`) até o `apply -var-file="prod.tfvars"` corrigir e
+  religar na porta certa. Não foi só risco teórico — foi incidente real,
+  ainda que em Docker local.
+- **Achado real de fluxo do lab, corrigido no README:** a Parte 3 colidiu
+  de cara com a Parte 1 — `Error: Conflict. The container name "/lab13-dev"
+  is already in use`. Os nomes são literais (`lab13-dev`, `lab13-prod`) nos
+  dois exercícios, e o Docker não faz ideia de que vêm de states Terraform
+  diferentes. A limpeza da Parte 1/2, que só existia no final do README,
+  precisa acontecer **antes** da Parte 3 — corrigido, com o passo de
+  destroy movido pra logo antes dos arquivos de `envs/`.
+- **Parte 3 confirmada:** depois da limpeza, os dois `apply` (`envs/dev` e
+  `envs/prod`) criaram os 4 recursos cada (via módulo `webapp` do Lab 10) e
+  os dois containers subiram ao mesmo tempo, sem qualquer conflito de nome
+  — a estrutura por diretório realmente elimina a colisão que workspace não
+  evita.
