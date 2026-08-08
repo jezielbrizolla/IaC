@@ -5,12 +5,66 @@
 ## Objetivo
 Entender como o Terraform decide a ordem das coisas.
 
-## Onde o código mora
-`terraform/stacks/web-network/main.tf` — stack novo (não expande o `web-basic`).
+## Teoria
 
-## O stack
+**Você nunca declara ordem no Terraform.** Isso é diferente do Packer, onde a
+ordem dos provisioners é literalmente a ordem de execução (Lab 02). Aqui, você
+declara *o que deve existir*, e o Terraform descobre sozinho a sequência.
 
-```hcl
+**Como ele descobre: o grafo de dependência.** Toda vez que um recurso
+referencia um atributo de outro — `docker_container.web` usando
+`docker_network.app_net.name` — o Terraform registra uma **aresta**: "o
+container depende da rede". Juntando todas as arestas, ele monta um grafo
+dirigido, e percorre em ordem topológica: o que não depende de nada vai
+primeiro, em paralelo; o que depende, espera.
+
+Isso é **dependência implícita**, e é a forma correta na esmagadora maioria
+dos casos. Você não pediu nada; ela emerge de você ter usado o valor.
+
+**`depends_on` é a exceção, não a alternativa.** Existe pra quando há uma
+dependência **real** que o Terraform não consegue enxergar, porque não passa
+por referência de atributo nenhuma. O exemplo clássico: uma IAM policy que
+precisa existir antes de um serviço conseguir usá-la, sem que haja referência
+direta entre os dois recursos no código.
+
+Usar `depends_on` quando já existe referência de atributo é redundante — e
+sinal de que quem escreveu não entendeu o mecanismo.
+
+**Ciclo = erro fatal.** Se A depende de B e B depende de A, não existe ponto
+de partida. Ordenação topológica exige um grafo **acíclico** — por isso o
+Terraform aborta com `Cycle: ...` em vez de tentar adivinhar.
+
+**O grafo também vale pro destroy**, percorrido ao contrário: destrói primeiro
+quem depende, depois quem é dependido. Você já viu isso no Lab 06, quando o
+container foi destruído antes da imagem.
+
+## O que vamos criar
+
+`terraform/stacks/web-network/main.tf` — stack novo (não expande o
+`web-basic`).
+
+Quatro recursos, e o container referencia os três outros por **atributo**:
+`docker_image.nginx.image_id`, `docker_network.app_net.name`,
+`docker_volume.app_data.name`. Cada referência dessas cria uma aresta no grafo
+de dependência — é assim que o Terraform sabe o que criar primeiro, sem você
+declarar ordem nenhuma.
+
+## Passo 1 — criar o stack
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "terraform/stacks/web-network/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -49,15 +103,10 @@ resource "docker_container" "web" {
     container_path = "/usr/share/nginx/html"
   }
 }
+'@
 ```
 
-Quatro recursos, e o container referencia os três outros por **atributo**:
-`docker_image.nginx.image_id`, `docker_network.app_net.name`,
-`docker_volume.app_data.name`. Cada referência dessas cria uma aresta no grafo
-de dependência — é assim que o Terraform sabe o que criar primeiro, sem você
-declarar ordem nenhuma.
-
-## Rodar
+## Passo 2 — rodar
 
 Da raiz `labs/`:
 
@@ -126,11 +175,9 @@ Rode o `graph` de novo e compare.
 
 Depois **volte para a versão com referência de atributo** — é a correta.
 
-**Conclusão a anotar:** dependência implícita (por referência de atributo) é a
-regra; `depends_on` é a exceção — para quando existe uma dependência real que o
-Terraform não consegue enxergar na config. O exemplo clássico: uma IAM policy
-que precisa existir antes de um serviço conseguir usá-la, sem que haja
-referência de atributo entre os dois.
+Isso fecha o ponto da Teoria: `depends_on` não é "a outra forma de fazer a
+mesma coisa". Ele ordena sem conectar. Se você tem a referência disponível,
+usá-la é sempre melhor — você ganha a ordenação *e* o dado.
 
 ## Quebre isto — dependência circular
 
