@@ -37,8 +37,8 @@ source "hyperv-iso" "win2022" {
 
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
-  boot_wait    = "5s"
-  boot_command = ["<spacebar><wait5><spacebar>"]
+  boot_wait    = "0s"
+  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar>"]
 
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer shutdown\""
   shutdown_timeout = "5m"

@@ -121,8 +121,8 @@ source "hyperv-iso" "win2022" {
 
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
-  boot_wait    = "5s"
-  boot_command = ["<spacebar><wait5><spacebar>"]
+  boot_wait    = "0s"
+  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar>"]
 
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer shutdown\""
   shutdown_timeout = "5m"
@@ -284,14 +284,16 @@ que mais costuma variar de máquina pra máquina.
 > dobrar (`\\`) pra representar uma barra literal. Barra normal (`/`)
 > funciona igual no Windows e evita esse detalhe todo.
 >
-> **Por que `boot_command = ["<spacebar><wait5><spacebar>"]`:** mídia de
-> instalação UEFI mostra "Press any key to boot from CD or DVD..." antes de
-> carregar o instalador — sem apertar, o firmware desiste e tenta o próximo
-> dispositivo de boot (o disco vazio), e a VM nunca chega no Windows Setup.
-> O Packer resolve isso mandando a tecla ele mesmo: `boot_wait = "5s"`
-> espera a VM ligar e chegar nessa tela, `boot_command` manda espaço, espera
-> mais 5s e manda de novo (dobrar aumenta a chance de acertar o timing certo
-> mesmo se a tela demorar um pouco mais que o esperado a aparecer).
+> **Por que `boot_command` manda espaço várias vezes:** mídia de instalação
+> UEFI mostra "Press any key to boot from CD or DVD..." por uma janela bem
+> curta — sem apertar a tempo, o firmware desiste e tenta o próximo
+> dispositivo (PXE, depois disco vazio), e a VM nunca chega no Windows
+> Setup. A primeira tentativa (`boot_wait = "5s"` + um único espaço) chegou
+> tarde demais — a VM já tinha avançado pro PXE. A correção: `boot_wait =
+> "0s"` (manda a primeira tecla assim que a VM liga) + oito espaços, um por
+> segundo, cobrindo os primeiros ~8s do boot em vez de apostar num instante
+> exato. Timing de boot não dá pra validar sem rodar de verdade — se ainda
+> cair em PXE, o próximo ajuste é mandar mais repetições, ou por mais tempo.
 
 ## Passo 2 — rodar o build
 
