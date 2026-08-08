@@ -5,23 +5,82 @@
 ## Objetivo
 Rodar a mesma stack em `dev` e `prod`, e entender os limites de workspace.
 
+## Teoria
+
+**A pergunta:** você tem a mesma stack rodando em `dev` e `prod`. Como separa?
+
+O Terraform oferece **workspaces** — e é uma armadilha, porque a ferramenta
+existe, funciona, e é a resposta errada para este caso específico. Este lab
+existe pra você sentir por quê antes de escolher errado num projeto real.
+
+**O que workspace faz.** Um `terraform workspace` cria um **state separado**
+dentro do mesmo diretório. `terraform.workspace` vira uma variável que você
+pode usar no código (`"lab13-${terraform.workspace}"`). Você alterna com
+`workspace select`.
+
+Parece isolamento. Mas veja o que continua **compartilhado**:
+
+| Compartilhado entre workspaces | Consequência |
+|---|---|
+| O mesmo **backend** | mesmo bucket/conta guardando os states |
+| As mesmas **credenciais** | quem aplica em dev tem acesso a prod |
+| O **mesmo código**, sem chance de divergir | não dá pra testar mudança em dev antes de prod |
+| O mesmo diretório | um `select` errado e você aplicou no lugar errado |
+
+**A falha é de desenho, não de atenção.** Não existe barreira nenhuma entre
+`dev` e `prod` — só o seu cuidado em rodar `workspace select` certo. E como o
+comando não avisa nada, você descobre o erro depois.
+
+**O padrão de mercado: diretório por ambiente.** Cada ambiente é uma pasta,
+com seu próprio backend, suas próprias credenciais, seu próprio
+`.terraform/`. O código comum vive num **módulo** (Lab 10), chamado por cada
+ambiente com parâmetros diferentes.
+
+```text
+modules/webapp/          ← o código, uma vez
+envs/dev/main.tf         ← chama o módulo com valores de dev
+envs/prod/main.tf        ← chama o módulo com valores de prod
+```
+
+A diferença essencial: agora aplicar em prod exige **estar no diretório de
+prod**, com as credenciais de prod. A separação é estrutural.
+
+**Quando workspace é a ferramenta certa**, então? Para ambientes **efêmeros e
+equivalentes**: um por feature branch, um por desenvolvedor, sandbox de teste.
+Casos em que não há diferença de criticidade nem de credencial — só de
+instância.
+
 > **Conexão com o objetivo:** isolamento por diretório/backend é o padrão que
-> escala para isolamento por tenant.
+> escala para isolamento por tenant. A mesma pergunta vai reaparecer com N
+> tenants: state compartilhado ou separado? A resposta é a mesma, pelas
+> mesmas razões.
 
-## Onde o código mora
+## O que vamos criar
 
-- **Parte 1:** `terraform/stacks/capstone-ambientes-ws/` — stack novo,
-  usa `terraform workspace`.
-- **Parte 3:** `terraform/envs/dev/` + `terraform/envs/prod/`, os dois
-  chamando o **mesmo módulo `terraform/modules/webapp/`** já criado no
+- **Passos 1–3 (o jeito problemático):**
+  `terraform/stacks/capstone-ambientes-ws/` — stack novo usando
+  `terraform workspace`.
+- **Passo 4 (o jeito certo):** `terraform/envs/dev/` + `terraform/envs/prod/`,
+  os dois chamando o **mesmo módulo `terraform/modules/webapp/`** já criado no
   Lab 10 — nada novo pra escrever ali, só duas chamadas com parâmetros
   diferentes.
 
-## Parte 1 — workspaces
+## Passo 1 — criar o stack de workspaces
 
-`terraform/stacks/capstone-ambientes-ws/main.tf`:
+Rode da raiz `labs/`:
 
-```hcl
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "terraform/stacks/capstone-ambientes-ws/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -60,19 +119,18 @@ resource "docker_container" "web" {
 output "url" {
   value = "http://localhost:${var.external_port}"
 }
-```
+'@
 
-`terraform/stacks/capstone-ambientes-ws/dev.tfvars`:
-
-```hcl
+Write-RepoFile "terraform/stacks/capstone-ambientes-ws/dev.tfvars" @'
 external_port = 8081
-```
+'@
 
-`terraform/stacks/capstone-ambientes-ws/prod.tfvars`:
-
-```hcl
+Write-RepoFile "terraform/stacks/capstone-ambientes-ws/prod.tfvars" @'
 external_port = 8082
+'@
 ```
+
+## Passo 2 — rodar com workspaces
 
 Da raiz `labs/`:
 
@@ -94,41 +152,37 @@ Get-ChildItem terraform\stacks\capstone-ambientes-ws\terraform.tfstate.d
 Confirme que existe um state por workspace, e que os dois containers
 (`lab13-dev` e `lab13-prod`) estão rodando ao mesmo tempo.
 
-## Parte 2 — a armadilha (o ponto do lab)
+## Passo 3 — a armadilha (o ponto do lab)
 
-Workspaces compartilham:
-
-- o **mesmo backend** (mesma conta/bucket)
-- as **mesmas credenciais**
-- o **mesmo código**, sem chance de divergir
-
-Ou seja: um `terraform workspace select` errado aplica em prod achando que era
-dev, e não existe barreira de permissão entre os dois. Reproduza o risco:
+A Teoria disse que não existe barreira entre workspaces. Agora **provoque o
+erro de propósito** — aplique a config de dev estando no workspace de prod:
 
 ```powershell
 terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace select prod
 terraform -chdir=terraform/stacks/capstone-ambientes-ws apply -auto-approve -var-file="dev.tfvars"
 ```
 
-Você acabou de aplicar a config de dev no workspace de prod sem nenhum aviso.
+Repare no que **não** aconteceu: nenhum aviso, nenhuma confirmação extra,
+nenhum "você tem certeza que quer mexer em prod?". O Terraform obedeceu.
+
 Desfaça:
 
 ```powershell
 terraform -chdir=terraform/stacks/capstone-ambientes-ws apply -auto-approve -var-file="prod.tfvars"
 ```
 
-Por isso o padrão de mercado para prod/non-prod **não** é workspace, e sim
-**diretórios + backends + credenciais separados**, com o código comum vivendo
-em módulos. Workspace é ótimo para: ambientes efêmeros de feature branch,
-testes, sandbox pessoal.
+> Neste lab o estrago é um container local. Com backend e credenciais reais,
+> o mesmo comando teria mexido em produção de verdade — e o único obstáculo
+> teria sido você lembrar de rodar `workspace select`. Ver Notas: aqui o
+> `prod` chegou a ficar **fora do ar**.
 
-## Parte 3 — refaça do jeito certo
+## Passo 4 — refaça do jeito certo
 
-> **Destrua a Parte 1/2 antes de continuar.** Os containers `lab13-dev` e
-> `lab13-prod` da Parte 1 usam os **mesmos nomes literais** que a Parte 3
+> **Destrua os Passos 1-3 antes de continuar.** Os containers `lab13-dev` e
+> `lab13-prod` dos passos anteriores usam os **mesmos nomes literais** que este passo
 > vai criar — e o Docker é um daemon único e compartilhado, sem noção de
-> "isso veio de um state diferente". Se não destruir agora, o `apply` da
-> Parte 3 falha com `Conflict: the container name ... is already in use`,
+> "isso veio de um state diferente". Se não destruir agora, o `apply` deste
+> passo falha com `Conflict: the container name ... is already in use`,
 > porque o nome já está ocupado por um recurso de um state completamente
 > diferente:
 >
@@ -194,8 +248,8 @@ Você fez das duas formas e sabe defender a segunda numa conversa técnica.
 
 ## Limpeza
 
-A Parte 1/2 já foi destruída antes da Parte 3 (passo acima) — só sobra
-remover os workspaces vazios e a Parte 3:
+Os Passos 1–3 já foram destruídos antes do Passo 4 (passo acima) — só sobra
+remover os workspaces vazios e o Passo 4:
 
 ```powershell
 terraform -chdir=terraform/envs/dev destroy -auto-approve
@@ -207,10 +261,10 @@ terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace delete prod
 
 ## Notas
 
-- **Parte 1 confirmada com evidência, não só pelo output:** `lab13-dev`
+- **Passos 1–2 confirmados com evidência, não só pelo output:** `lab13-dev`
   (8081) e `lab13-prod` (8082) rodando ao mesmo tempo, cada workspace com
   seu próprio state em `terraform.tfstate.d/` (2 recursos gerenciados cada).
-- **Parte 2 foi mais dramática que o roteiro previa.** Aplicar `dev.tfvars`
+- **O Passo 3 (a armadilha) foi mais dramático que o roteiro previa.** Aplicar `dev.tfvars`
   no workspace `prod` não só "confundiu a config" — mudou a porta
   (`external`), que força `replace` do container. O Terraform destruiu o
   `lab13-prod` antigo e falhou ao criar o novo: a porta 8081 já estava
@@ -219,14 +273,14 @@ terraform -chdir=terraform/stacks/capstone-ambientes-ws workspace delete prod
   `Created`, não `Up`) até o `apply -var-file="prod.tfvars"` corrigir e
   religar na porta certa. Não foi só risco teórico — foi incidente real,
   ainda que em Docker local.
-- **Achado real de fluxo do lab, corrigido no README:** a Parte 3 colidiu
-  de cara com a Parte 1 — `Error: Conflict. The container name "/lab13-dev"
+- **Achado real de fluxo do lab, corrigido no README:** o Passo 4 colidiu
+  de cara com os passos anteriores — `Error: Conflict. The container name "/lab13-dev"
   is already in use`. Os nomes são literais (`lab13-dev`, `lab13-prod`) nos
   dois exercícios, e o Docker não faz ideia de que vêm de states Terraform
-  diferentes. A limpeza da Parte 1/2, que só existia no final do README,
-  precisa acontecer **antes** da Parte 3 — corrigido, com o passo de
+  diferentes. A limpeza dos Passos 1–3, que só existia no final do README,
+  precisa acontecer **antes** do Passo 4 — corrigido, com o passo de
   destroy movido pra logo antes dos arquivos de `envs/`.
-- **Parte 3 confirmada:** depois da limpeza, os dois `apply` (`envs/dev` e
+- **Passo 4 confirmado:** depois da limpeza, os dois `apply` (`envs/dev` e
   `envs/prod`) criaram os 4 recursos cada (via módulo `webapp` do Lab 10) e
   os dois containers subiram ao mesmo tempo, sem qualquer conflito de nome
   — a estrutura por diretório realmente elimina a colisão que workspace não
