@@ -107,11 +107,9 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 **Bloco 2 (Terraform core) fechado — Labs 06 a 11 completos.** Bateu a meta
 antes de sexta. Labs 12 e 13 também fechados.
 
-**Falta só a limpeza do Lab 13** (`terraform destroy` em `envs/dev` e
-`envs/prod` + deletar os workspaces `dev`/`prod` do stack da Parte 1) antes
-de seguir pro **Lab 14 — Empacotar** (Bloco 3, o entregável). Cria as tasks
-`capstone:build`/`capstone:destroy` no `Taskfile.yml` — é o próprio conteúdo
-do lab, não script pronto.
+**Próximo: Lab 14 — Empacotar** (Bloco 3, o entregável — fecha o Bloco 3).
+Cria as tasks `capstone:build`/`capstone:destroy` no `Taskfile.yml` — é o
+próprio conteúdo do lab, não script pronto. Ainda não iniciado.
 
 Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
@@ -144,10 +142,10 @@ Pendências que não pertencem a um lab específico:
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
 | 2 — Terraform | 06–11 | ✅ 73/73 |
-| 3 — Capstone | 12–14 | 🔶 24/37 |
+| 3 — Capstone | 12–14 | 🔶 25/37 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **163/273 (60%)** |
+| **Total** | | **164/273 (60%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -476,7 +474,7 @@ credencial; um `select` errado aplica em prod sem aviso).
 - [x] Criei `envs/dev/` + `envs/prod/` reaproveitando `modules/webapp/` (sem módulo novo)
 - [x] Apply funcionando nos dois diretórios separados, confirmado por evidência (`docker ps` + state com 4 recursos cada)
 - [x] Conclusão sobre "por que diretório > workspace para prod/non-prod" anotada nas Notas
-- [ ] Limpeza completa (destroy nos dois modelos, workspaces deletados)
+- [x] Limpeza completa (destroy nos dois modelos, workspaces deletados)
 - [x] Notas preenchidas no README
 
 > **Conexão com o objetivo:** isolamento por diretório/backend é o padrão que
