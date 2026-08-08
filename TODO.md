@@ -579,6 +579,13 @@ provisiona, Sysprep generaliza. Sem Sysprep, todas as VMs clonadas herdam o
 mesmo SID (problema sério em domínio).
 **Depende de:** Labs 15 e 16
 
+> **Quando chegar aqui:** o JZ vai trazer um `post.ps1` real (script de
+> pós-instalação que ele já usa) pra substituir o playbook genérico deste
+> lab, e expandir pra 2022/2025/Win11 (ISOs já em `labs/ISOs/`, mesmo
+> padrão multi-source do Lab 04). Decisão em aberto: manter PowerShell puro,
+> converter pra Ansible, ou separar num "Lab 17.5" pra não misturar o
+> conceito básico do pipeline com a expansão multi-versão. Resolver na hora.
+
 - [ ] Copiar `Autounattend.xml` do lab 15
 - [ ] Criar `golden.pkr.hcl` com provisioners PowerShell + Ansible + Sysprep
 - [ ] Criar `playbook-golden.yml` (features + hardening + updates)
