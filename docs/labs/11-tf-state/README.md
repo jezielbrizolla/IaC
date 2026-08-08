@@ -5,15 +5,88 @@
 ## Objetivo
 Operar o state com confiança. É o lab mais denso do bloco — reserve a sessão longa.
 
-## Onde o código mora
-`terraform/stacks/web-state/main.tf`.
+## Teoria
 
+**O Lab 06 explicou o que o state é. Este lab é sobre operá-lo** — as quatro
+situações reais em que você precisa mexer no mapa sem destruir o território.
+
+**1. `import` — trazer pra dentro o que já existe.** Cenário: alguém criou um
+recurso na mão, ou você está adotando infra que já rodava antes do Terraform.
+O recurso existe, mas o Terraform não sabe. `terraform import` adiciona ele ao
+state.
+
+O detalhe que surpreende: **`import` não escreve código pra você** (na forma
+clássica). Ele preenche o state; você precisa escrever o bloco `resource`
+correspondente à mão, e ir ajustando até o `plan` ficar **vazio**. Se o plan
+não zera, seu código não descreve o que existe de verdade — e aplicar iria
+modificar o recurso.
+
+> O Terraform ≥ 1.5 tem o bloco `import {}` + `-generate-config-out`, que gera
+> o HCL automaticamente. Vale conhecer os dois caminhos.
+
+**2. Drift — quando a realidade muda por fora.** Alguém parou o container pelo
+console, um autoscaler mudou a contagem, um script mexeu numa tag. O state diz
+uma coisa, o mundo diz outra. O `plan` detecta e propõe **desfazer** a mudança
+externa (voltar ao declarado).
+
+Aqui entra `terraform plan -refresh-only`: em vez de propor mudar o mundo, ele
+propõe **atualizar o state** pra refletir a realidade. É a ferramenta de
+auditoria — "o que mudou por fora?" — sem risco de aplicar nada.
+
+**3. `moved` e `state mv` — renomear sem destruir.** Você renomeia
+`docker_container.app` para `docker_container.web` no código. Pro Terraform,
+isso não é rename — é *um recurso que sumiu e outro que apareceu*. O plan
+propõe destruir e criar. Em produção isso é downtime por causa de refactor.
+
+Duas formas de resolver:
+
+| | `terraform state mv` | bloco `moved {}` |
+|---|---|---|
+| Natureza | comando imperativo | declarativo, no código |
+| Fica registrado? | não — só no seu histórico de shell | **sim**, versionado |
+| Vale pra quem clonar? | não | sim |
+
+**Prefira `moved {}`.** Ele fica no código, então quem der `pull` também
+renomeia corretamente, sem precisar rodar comando nenhum.
+
+**4. `state rm` — remover do controle sem destruir.** Isto **não apaga o
+recurso real**. Tira do state, e o Terraform passa a ignorar aquele recurso
+como se nunca tivesse existido.
+
+Serve pra migrar um recurso entre configs, ou pra "soltar" algo que outro time
+vai assumir. E é perigoso pela mesma razão: o recurso continua existindo (e
+sendo cobrado), só que agora ninguém o gerencia — é como se cria infra órfã de
+propósito.
+
+> **`state rm` vs `destroy`:** `destroy` apaga o recurso real e remove do
+> state. `state rm` só remove do state. É a mesma distinção que o Lab 06
+> mostrou com `keep_locally = true`, onde "Destroyed" no output não significou
+> imagem apagada.
+>
 > **Conexão com o objetivo:** com N tenants, o state fica separado por tenant
 > ou por stack? O que acontece com os outros se o state de um corromper?
 
-## Base
+## O que vamos criar
 
-```hcl
+`terraform/stacks/web-state/main.tf` — um stack simples de propósito. O
+conteúdo importa menos que as operações que vamos fazer sobre ele.
+
+## Passo 1 — criar a base
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "terraform/stacks/web-state/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -35,23 +108,22 @@ resource "docker_container" "app" {
   name  = "lab11-app"
   image = docker_image.nginx.image_id
 }
+'@
 ```
-
-Da raiz `labs/`:
 
 ```powershell
 terraform -chdir=terraform/stacks/web-state init
 terraform -chdir=terraform/stacks/web-state apply -auto-approve
 ```
 
-## Parte 1 — inspeção
+## Passo 2 — inspeção
 
 ```powershell
 terraform -chdir=terraform/stacks/web-state state list
 terraform -chdir=terraform/stacks/web-state state show docker_container.app
 ```
 
-## Parte 2 — import
+## Passo 3 — import
 
 1. Crie um container **fora** do Terraform:
 
@@ -88,7 +160,7 @@ terraform -chdir=terraform/stacks/web-state state show docker_container.app
 > `terraform plan -generate-config-out=gerado.tf`, que já escreve a config
 > para você. Vale testar as duas formas.
 
-## Parte 3 — drift
+## Passo 4 — drift
 
 ```powershell
 docker stop orfao
@@ -105,7 +177,7 @@ terraform -chdir=terraform/stacks/web-state plan -refresh-only
 Aqui ele só reconcilia o **state** com a realidade (mostra o que mudou), sem
 propor nenhuma ação para mudar a realidade de volta.
 
-## Parte 4 — mv e moved
+## Passo 5 — `moved` e `state mv`
 
 1. Renomeie `docker_container.app` para `docker_container.web` no `main.tf`.
 2. `terraform -chdir=terraform/stacks/web-state plan` → ele quer **destruir e
@@ -124,7 +196,7 @@ propor nenhuma ação para mudar a realidade de volta.
 
 4. `terraform -chdir=terraform/stacks/web-state plan` de novo — deve ficar vazio.
 
-## Parte 5 — rm
+## Passo 6 — `state rm`
 
 ```powershell
 terraform -chdir=terraform/stacks/web-state state rm docker_container.orfao
