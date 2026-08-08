@@ -1,4 +1,4 @@
-﻿packer {
+packer {
   required_plugins {
     hyperv = {
       source  = "github.com/hashicorp/hyperv"
@@ -7,12 +7,12 @@
   }
 }
 
-variable "iso_path"        { type = string }
-variable "switch_name"     { type = string }
-variable "vm_name"         { type = string }
-variable "disk_size_mb"    { type = number }
-variable "memory_mb"       { type = number }
-variable "cpus"            { type = number }
+variable "iso_path" { type = string }
+variable "switch_name" { type = string }
+variable "vm_name" { type = string }
+variable "disk_size_mb" { type = number }
+variable "memory_mb" { type = number }
+variable "cpus" { type = number }
 variable "admin_password" {
   type      = string
   sensitive = true
@@ -28,10 +28,10 @@ source "hyperv-iso" "win2022" {
   memory       = var.memory_mb
   cpus         = var.cpus
 
-  communicator    = "winrm"
-  winrm_username  = "Administrator"
-  winrm_password  = var.admin_password
-  winrm_timeout   = "30m"
+  communicator   = "winrm"
+  winrm_username = "Administrator"
+  winrm_password = var.admin_password
+  winrm_timeout  = "30m"
 
   cd_files = ["files/win2022-base/Autounattend.xml"]
 

@@ -79,9 +79,17 @@ Três peças, uma vez só:
 Um script só, cria tudo. Rode da raiz `labs/`:
 
 ```powershell
-New-Item -ItemType Directory -Path "packer/files/win2022-base" -Force | Out-Null
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `packer fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
 
-Set-Content -Path "packer/templates/win2022-base.pkr.hcl" -Encoding UTF8 -Value @'
+Write-RepoFile "packer/templates/win2022-base.pkr.hcl" @'
 packer {
   required_plugins {
     hyperv = {
@@ -91,12 +99,12 @@ packer {
   }
 }
 
-variable "iso_path"        { type = string }
-variable "switch_name"     { type = string }
-variable "vm_name"         { type = string }
-variable "disk_size_mb"    { type = number }
-variable "memory_mb"       { type = number }
-variable "cpus"            { type = number }
+variable "iso_path" { type = string }
+variable "switch_name" { type = string }
+variable "vm_name" { type = string }
+variable "disk_size_mb" { type = number }
+variable "memory_mb" { type = number }
+variable "cpus" { type = number }
 variable "admin_password" {
   type      = string
   sensitive = true
@@ -112,10 +120,10 @@ source "hyperv-iso" "win2022" {
   memory       = var.memory_mb
   cpus         = var.cpus
 
-  communicator    = "winrm"
-  winrm_username  = "Administrator"
-  winrm_password  = var.admin_password
-  winrm_timeout   = "30m"
+  communicator   = "winrm"
+  winrm_username = "Administrator"
+  winrm_password = var.admin_password
+  winrm_timeout  = "30m"
 
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
@@ -139,7 +147,7 @@ build {
 }
 '@
 
-Set-Content -Path "packer/vars/win2022-base.pkrvars.hcl" -Encoding UTF8 -Value @'
+Write-RepoFile "packer/vars/win2022-base.pkrvars.hcl" @'
 iso_path       = "C:/Users/jezie/OneDrive/Documentos/Estudos/IaC/labs/ISOs/en-us_windows_server_2022_updated_dec_2025_x64_dvd_84450f64.iso"
 switch_name    = "LabSwitch"
 vm_name        = "lab15-win2022"
@@ -149,7 +157,7 @@ cpus           = 2
 admin_password = "P@cker2026!"
 '@
 
-Set-Content -Path "packer/files/win2022-base/Autounattend.xml" -Encoding UTF8 -Value @'
+Write-RepoFile "packer/files/win2022-base/Autounattend.xml" @'
 <?xml version="1.0" encoding="utf-8"?>
 <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
   <settings pass="windowsPE">

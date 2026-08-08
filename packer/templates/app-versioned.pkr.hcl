@@ -35,6 +35,6 @@ build {
 
   post-processor "docker-tag" {
     repository = "meuapp"
-    tags        = [var.app_version]
+    tags       = [var.app_version]
   }
 }
