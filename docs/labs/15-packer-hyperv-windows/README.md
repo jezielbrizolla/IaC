@@ -121,6 +121,9 @@ source "hyperv-iso" "win2022" {
 
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
+  boot_wait    = "5s"
+  boot_command = ["<spacebar><wait5><spacebar>"]
+
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer shutdown\""
   shutdown_timeout = "5m"
 }
@@ -280,6 +283,15 @@ que mais costuma variar de máquina pra máquina.
 > `\` como início de sequência de escape dentro de string — precisaria
 > dobrar (`\\`) pra representar uma barra literal. Barra normal (`/`)
 > funciona igual no Windows e evita esse detalhe todo.
+>
+> **Por que `boot_command = ["<spacebar><wait5><spacebar>"]`:** mídia de
+> instalação UEFI mostra "Press any key to boot from CD or DVD..." antes de
+> carregar o instalador — sem apertar, o firmware desiste e tenta o próximo
+> dispositivo de boot (o disco vazio), e a VM nunca chega no Windows Setup.
+> O Packer resolve isso mandando a tecla ele mesmo: `boot_wait = "5s"`
+> espera a VM ligar e chegar nessa tela, `boot_command` manda espaço, espera
+> mais 5s e manda de novo (dobrar aumenta a chance de acertar o timing certo
+> mesmo se a tela demorar um pouco mais que o esperado a aparecer).
 
 ## Passo 2 — rodar o build
 
