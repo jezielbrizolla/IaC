@@ -58,6 +58,18 @@ Traduzindo em escopo:
    planejamento (ver "Perguntas em aberto").
 4. **Fora de escopo por enquanto**: baremetal (Redfish/PXE/MAAS já estava
    anotado como gap conhecido no backlog do Track 0 — segue fora).
+5. **Novo eixo registrado em 2026-08-08 (ao trabalhar no Lab 17):** golden
+   images para múltiplas superfícies — Linux via Hyper-V (não só Docker,
+   que já é coberto nos Labs 01-14), e imagens que sirvam de base pra
+   infra on-prem real (KOB, ESXi/VMware). Isso é **on-prem**, diferente do
+   eixo multi-cloud público (item 1) — um terceiro eixo, não uma variação
+   dele. Ainda sem forma definida: um builder Packer por plataforma
+   (`hyperv-iso` pra Hyper-V, algo tipo `vsphere-iso` pra ESXi), resposta
+   de instalação por OS (`Autounattend.xml` pra Windows já coberto;
+   cloud-init/preseed/kickstart pra Linux, ainda não testado neste repo).
+   Multi-versão Windows (2022/2025/Win11) dentro do Hyper-V já está em
+   andamento no Lab 17 (mesmo padrão do Lab 04, multi-source por variável)
+   — o gap real é especificamente Linux-via-Hyper-V e a camada ESXi.
 
 **Moldura adicional (2026-08-08):** o JZ descreveu o objetivo como construir
 uma **réplica pessoal do ciclo de vida completo** de um gerenciador de nuvem
