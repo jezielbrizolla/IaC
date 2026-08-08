@@ -173,10 +173,10 @@ Pendências que não pertencem a um lab específico:
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
 | 2 — Terraform | 06–11 | ✅ 73/73 |
-| 3 — Capstone | 12–14 | 🔶 35/36 |
+| 3 — Capstone | 12–14 | ✅ 35/35 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 11/42 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **184/269 (68%)** |
+| **Total** | | **184/268 (69%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -525,7 +525,10 @@ sem te perguntar nada. É o entregável de portfólio.
 - [x] Seção "próximos passos: multi-cloud" linkando pro `docs/PROXIMO-TRACK.md`
 - [x] `task capstone:build` rodou do zero e funcionou (`curl` confirmou `capstone v2`)
 - [x] `task capstone:destroy` + `task clean` limparam tudo (conferido com `docker ps -a`, liberou 2.2GB)
-- [ ] Pedi pra alguém (ou eu mesmo, dias depois) seguir só o README sem ajuda
+> **Validação por terceiro movida pro curso HTML.** O critério "alguém segue
+> só o README, sem te perguntar nada" continua valendo — mas faz mais sentido
+> testar o treinamento **inteiro** de uma vez, com amigos, do que lab por lab.
+> Planejado como Fase 6 em `labs-html/PLANO-CURSO.md` (fora deste repositório).
 - [x] Commit + push do capstone
 - [x] Notas preenchidas no README
 

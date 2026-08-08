@@ -144,10 +144,14 @@ flowchart LR
 ```
 
 ## Critério de conclusão
-Um estranho clona o repo, roda `task capstone:build` e tem a coisa
-funcionando **sem te perguntar nada**. Se precisar de você para explicar, o
-README do Lab 12 não está pronto. Peça pra alguém (ou releia você mesmo em
-outro dia, "a frio") seguir só o README.
+`task capstone:build` sobe o pipeline inteiro com um comando, `curl` responde,
+e `task capstone:destroy` + `task clean` desfazem tudo.
+
+> **O teste final — "um estranho clona o repo e faz funcionar sem te perguntar
+> nada" — fica pro curso completo**, não pra este lab isolado. Faz mais
+> sentido validar o treinamento inteiro de uma vez, com revisores externos, do
+> que lab por lab. Está planejado como Fase 6 em `labs-html/PLANO-CURSO.md`
+> (fora deste repositório).
 
 ## Limpeza
 
