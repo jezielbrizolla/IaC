@@ -143,14 +143,15 @@ em [`docs/ANALISE-MELHORIAS.md`](docs/ANALISE-MELHORIAS.md).
 
 Pendências que não pertencem a um lab específico:
 
-- [ ] **Refazer os READMEs dos Labs 01–14 no formato novo** (explicação do
-      passo + um único script que cria tudo, em vez de arquivo por arquivo
-      em blocos separados; + seção "Teoria" antes da prática, explicando o
-      conceito antes do comando — os dois adotados a partir do Lab 15). Não
-      fazer agora — só quando o JZ pedir. Ao fazer, revalidar o conteúdo de
-      cada lab de novo (a revalidação do Lab 15 achou 2 bugs reais que
-      estavam lá desde a escrita original: namespace XML faltando, path
-      desatualizado).
+- [x] **Refazer os READMEs dos Labs 01–14 no formato novo** — concluído em
+      2026-08-08. Todos com `## Teoria` antes da prática e um script único
+      por passo (`Write-RepoFile`, que grava LF + UTF-8 sem BOM). Cada script
+      foi verificado executando de verdade num diretório temporário e
+      comparando com os arquivos reais do repo. **15 dos 23 labs** estão no
+      formato novo (01–15); os 8 restantes são o `00-setup` e os Labs 16–22,
+      que ainda não foram executados e já nascem nesse formato.
+      Isso destrava o gerador do curso HTML — ver
+      [`../labs-html/PLANO-CURSO.md`](../labs-html/PLANO-CURSO.md), item 6.1.
 - [ ] Adicionar tasks `tf:init` / `tf:plan` / `tf:apply` / `tf:destroy` ao
       `Taskfile.yml` — a regra era "só depois de fazer na mão"; já foi feito
       nos Labs 06/07, pode adicionar
