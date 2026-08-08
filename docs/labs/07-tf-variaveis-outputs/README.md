@@ -5,30 +5,97 @@
 ## Objetivo
 Parametrizar a stack e expor informação de volta.
 
-## Onde o código mora
-`terraform/stacks/web-basic/` — **o mesmo stack do Lab 06**, agora expandido.
+## Teoria
 
-Isso é proposital: em vez de criar um diretório por aula, o stack evolui. Você
-sai de tudo hardcoded (`lab06-web`, `8080`) para entrada parametrizável — que é
-o primeiro passo concreto na direção de "um tenant = uma chamada com valores
-diferentes".
+**Entrada e saída — a interface do stack.** No Lab 06 tudo estava cravado:
+`lab06-web`, porta `8080`. Um stack assim serve pra uma coisa só. Este lab
+transforma ele numa **unidade parametrizável**, que é o primeiro passo
+concreto na direção de "um tenant = uma chamada com valores diferentes".
 
-Arquivos ao final:
+- **`variable`** = a entrada. O que quem usa o stack decide.
+- **`output`** = a saída. O que o stack devolve pra quem chamou — ou pro
+  próximo estágio do pipeline.
+- **`locals`** = valor derivado, calculado dentro. Mesmo conceito do Lab 03.
+
+**Tipos e validação acontecem antes de tocar em nada.** `type = number` faz o
+Terraform recusar uma string. E o bloco `validation` permite regra própria —
+que roda **antes** de qualquer recurso ser criado ou modificado. É a diferença
+entre falhar em 2 segundos com uma mensagem clara e falhar em 2 minutos com um
+erro do provider.
+
+**Variável sem `default` é obrigatória.** Com `default`, é opcional. Essa é a
+única diferença — não existe palavra-chave `required`.
+
+**A precedência — e o aviso mais importante deste lab.** O Terraform aceita o
+mesmo valor por quatro caminhos, e a ordem é:
+
+```text
+default  <  TF_VAR_*  <  terraform.tfvars  <  -var
+```
+
+> ⚠️ **Isto é diferente do Packer (Lab 03)**, onde a ordem é
+> `default < PKR_VAR_* < -var-file < -var`. No Packer a variável de ambiente
+> perde pro arquivo passado por `-var-file`; no Terraform, o
+> `terraform.tfvars` (que é lido **automaticamente**, sem flag) vence a
+> variável de ambiente.
+>
+> Não assuma simetria entre as duas ferramentas. Esta ordem foi **verificada
+> rodando**, não lida na documentação — e a primeira versão deste README
+> documentava errado. Ver Notas.
+
+Consequência prática: se existe um `terraform.tfvars` no diretório, exportar
+`TF_VAR_alguma_coisa` **não vai funcionar** e você vai perder tempo achando
+que o shell está quebrado. É preciso tirar o arquivo do caminho pra testar a
+variável de ambiente.
+
+**`output` derivado de `variable` vs de atributo de recurso.** Parece detalhe,
+mas não é: `"http://localhost:${var.external_port}"` existe *antes* do apply
+(vem do que você pediu). Já `docker_container.web.id` só existe *depois* (vem
+do que foi criado de verdade). O primeiro pode mentir se a variável mudar sem
+um apply correspondente — aconteceu neste lab, ver Notas.
+
+**Por que separar em três arquivos.** O Terraform lê **todos** os `.tf` do
+diretório como se fossem um só — `variables.tf`, `outputs.tf` e `main.tf` é
+convenção, não regra. A convenção existe pra quem lê o código encontrar a
+interface (entradas e saídas) sem caçar dentro da lógica.
+
+## O que vamos criar
+
+Este lab **expande o mesmo stack do Lab 06** — `terraform/stacks/web-basic/`.
+Não cria diretório novo. Isso é proposital: em vez de uma pasta por aula, o
+stack evolui.
+
 ```text
 terraform/stacks/web-basic/
-├── main.tf              ← modificado
+├── main.tf              ← modificado (locals + variáveis)
 ├── variables.tf         ← novo
 ├── outputs.tf           ← novo
 └── terraform.tfvars     ← novo
 ```
 
-> Separar em `variables.tf` / `outputs.tf` / `main.tf` é convenção, não regra —
-> o Terraform lê todos os `.tf` do diretório como se fossem um arquivo só. A
-> convenção existe pra quem lê o código encontrar a interface (entradas e
-> saídas) sem caçar dentro da lógica.
+Três variáveis, cada uma mostrando uma coisa diferente:
 
-## `variables.tf`
-```hcl
+- `container_name` — `string` com `default`, o caso simples
+- `external_port` — `number` **sem** `default` (portanto obrigatória), e com
+  bloco `validation`
+- `labels` — `map(string)`, mostrando tipo composto
+
+## Passo 1 — criar os arquivos
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "terraform/stacks/web-basic/variables.tf" @'
 variable "container_name" {
   type    = string
   default = "web"
@@ -39,7 +106,7 @@ variable "external_port" {
 
   validation {
     condition     = var.external_port >= 1024 && var.external_port <= 65535
-    error_message = "external_port precisa estar entre 1024 e 65535 (portas < 1024 exigem privilégio root)."
+    error_message = "A porta externa deve estar entre 1024 e 65535. Portas abaixo de 1024 sao reservadas para o sistema (exigem privilegio de root)."
   }
 }
 
@@ -49,16 +116,25 @@ variable "labels" {
     ambiente = "lab"
   }
 }
-```
+'@
 
-Três tipos diferentes de propósito:
-- `container_name` — `string` com `default`, o caso simples
-- `external_port` — `number` **sem** `default`, então é **obrigatória**, e com
-  bloco `validation` que roda antes de qualquer recurso ser tocado
-- `labels` — `map(string)`, mostrando tipo composto
+Write-RepoFile "terraform/stacks/web-basic/outputs.tf" @'
+output "url" {
+  value = "http://localhost:${var.external_port}"
+}
 
-## `main.tf` (modificar o do Lab 06)
-```hcl
+output "container_id" {
+  value = docker_container.web.id
+}
+'@
+
+Write-RepoFile "terraform/stacks/web-basic/terraform.tfvars" @'
+external_port = 8081
+'@
+
+# main.tf: só mudam duas linhas em relação ao Lab 06 — o `name` (agora
+# local.full_name) e o `external` (agora var.external_port).
+Write-RepoFile "terraform/stacks/web-basic/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -89,35 +165,15 @@ resource "docker_container" "web" {
     external = var.external_port
   }
 }
+'@
 ```
 
-O `locals` compõe `"web"` + `"lab"` → `web-lab`. Só mudaram duas linhas do Lab
-06: o `name` (agora `local.full_name`) e o `external` (agora `var.external_port`).
+> **Repare que a `error_message` não tem acento.** É deliberado: mensagem de
+> erro é feita pra ser lida por humano em qualquer terminal, e acento em
+> arquivo gravado por PowerShell é uma fonte real de mojibake — ver Notas.
+> O `locals` compõe `"web"` + `"lab"` → `web-lab`.
 
-## `outputs.tf`
-```hcl
-output "url" {
-  value = "http://localhost:${var.external_port}"
-}
-
-output "container_id" {
-  value = docker_container.web.id
-}
-```
-
-`output` é a **saída** do stack — o que o próximo estágio consome. Repare que
-`url` é derivado de variável (existe antes do apply) e `container_id` vem de um
-atributo do recurso (só existe depois). No Lab 10 os outputs viram a interface
-pública do módulo.
-
-## `terraform.tfvars`
-```hcl
-external_port = 8081
-```
-
-Arquivo lido **automaticamente** pelo Terraform, sem precisar de `-var-file`.
-
-## Rodar — as quatro formas de passar valor
+## Passo 2 — rodar as quatro formas de passar valor
 
 Da raiz `labs/`:
 
@@ -139,20 +195,8 @@ Remove-Item Env:\TF_VAR_external_port
 Rename-Item terraform/stacks/web-basic/terraform.tfvars.bak terraform.tfvars
 ```
 
-A quarta forma é o `default` — que aqui não se aplica a `external_port` (ela não
-tem default, é obrigatória), mas se aplica a `container_name` e `labels`.
-
-**Precedência real** (⚠ diferente do Packer do Lab 03 — não é só trocar o
-prefixo, a ordem entre tfvars e env var **inverte**):
-```text
-default  <  TF_VAR_*  <  terraform.tfvars  <  -var
-```
-`terraform.tfvars` vence variável de ambiente. Testado isolado: com
-`external_port` só no `terraform.tfvars` (8081) e `TF_VAR_external_port=8083`
-setado por cima, o resultado é **8081** — o ambiente perde. É por isso que o
-passo 3 acima precisa tirar o `terraform.tfvars` do caminho antes de testar o
-env var; sem isso, o `apply` sempre volta pro valor do arquivo, mascarando a
-variável de ambiente por completo.
+A quarta forma é o `default` — que aqui não se aplica a `external_port` (ela
+não tem default, é obrigatória), mas se aplica a `container_name` e `labels`.
 
 > **O que esperar no primeiro apply:** o Lab 06 criou o container como
 > `lab06-web`. Agora o nome vira `web-lab`, e nome de container Docker não muda
@@ -161,11 +205,13 @@ variável de ambiente por completo.
 > te diz qual (`# forces replacement`).
 
 ## Quebre isto
+
 ```powershell
 terraform -chdir=terraform/stacks/web-basic apply -var="external_port=80"
 ```
 
 Você vai ver:
+
 ```text
 Error: Invalid value for variable
   on variables.tf line 6:
@@ -173,11 +219,11 @@ Error: Invalid value for variable
     ├────────────────
     │ var.external_port is 80
 
-external_port precisa estar entre 1024 e 65535 (portas < 1024 exigem
-privilégio root).
+A porta externa deve estar entre 1024 e 65535. ...
 ```
 
 Duas coisas para observar:
+
 1. A mensagem inclui **o valor que causou o erro** (`var.external_port is 80`) —
    por isso vale escrever `error_message` explicando o *porquê*, não só "valor
    inválido".
@@ -189,19 +235,12 @@ Duas coisas para observar:
    recurso. Nos dois casos a validação dispara no mesmo lugar — o que muda é o
    quanto do plan já tinha sido montado antes de chegar lá.
 
-Depois, reescreva a `error_message` de um jeito que **você mesmo** entenderia
-daqui a 6 meses, sem contexto.
-
-## Entenda
-`variable` = entrada, vem de fora. `locals` = valor derivado, calculado dentro.
-Se você tem uma `variable` com `default` que ninguém nunca sobrescreve,
-provavelmente era `locals`.
-
 ## Critério de conclusão
 `terraform output url` imprime uma URL que abre no navegador, e você testou a
 precedência entre `terraform.tfvars`, `TF_VAR_*` e `-var`.
 
 ## Limpeza
+
 ```powershell
 terraform -chdir=terraform/stacks/web-basic destroy -auto-approve
 ```
@@ -248,3 +287,6 @@ terraform -chdir=terraform/stacks/web-basic destroy -auto-approve
   antiga. Lição: output derivado de `variable` pode divergir do estado real se
   a variável mudar sem um `apply` correspondente; um output confiável viria do
   atributo do recurso, não do que foi pedido a ele.
+- **A `error_message` foi reescrita sem acentos**, de propósito — o README
+  original mostrava uma versão com "privilégio" que não bate mais com o
+  arquivo real. Sincronizado no retrofit de 2026-08-08.
