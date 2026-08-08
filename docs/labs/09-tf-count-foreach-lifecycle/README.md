@@ -5,19 +5,83 @@
 ## Objetivo
 O experimento que ensina de vez por que `for_each` quase sempre ganha.
 
-## Onde o código mora
-`terraform/stacks/web-count-foreach/` — `main.tf` (imagem compartilhada) +
-`count.tf` (evolui durante o lab: primeiro `count`, depois `for_each`).
+## Teoria
+
+**O problema: criar N coisas parecidas sem escrever N blocos.** Você precisa
+de três containers, ou de um por tenant. Copiar o bloco `resource` três vezes
+funciona, mas não escala e não permite que a lista venha de uma variável.
+
+O Terraform tem dois **meta-arguments** pra isso — `count` e `for_each` — e
+escolher errado entre eles é uma das causas mais comuns de incidente em
+produção com Terraform.
+
+**A diferença é o que forma a identidade do recurso no state.**
+
+| | `count` | `for_each` |
+|---|---|---|
+| Aceita | número | mapa ou `set` |
+| Identidade no state | **posição** — `app[0]`, `app[1]` | **chave** — `app["a"]`, `app["b"]` |
+| Referência interna | `count.index` | `each.key` / `each.value` |
+
+**Por que isso importa tanto.** Suponha `["a", "b", "c"]` com `count`. O state
+guarda `app[0]=a`, `app[1]=b`, `app[2]=c`. Agora você remove `"b"` do meio:
+
+```text
+antes:  ["a", "b", "c"]  →  app[0]=a  app[1]=b  app[2]=c
+depois: ["a", "c"]       →  app[0]=a  app[1]=c
+```
+
+O Terraform compara posição por posição. Ele vê que `app[1]` era `b` e agora
+deve ser `c` — então quer **destruir e recriar** o `app[1]`. E `app[2]` sumiu,
+então destrói também. Você removeu **um** item e o Terraform mexe em **dois**
+recursos, incluindo um (`c`) que você não tocou.
+
+Com `for_each`, a identidade é a chave: `app["b"]` simplesmente deixa de
+existir. `app["a"]` e `app["c"]` nem aparecem no plan.
+
+> **A regra:** use `for_each` sempre que os itens tiverem **identidade
+> própria** — tenants, ambientes, aplicações, redes. Use `count` só para
+> réplicas realmente intercambiáveis (N workers idênticos sem estado), ou como
+> liga/desliga: `count = var.enabled ? 1 : 0`.
+
+**`lifecycle` — os guardrails.** Bloco que muda *como* o Terraform trata o
+recurso, sem mudar o que ele é:
+
+- **`create_before_destroy = true`** — ao substituir, cria o novo antes de
+  destruir o velho (inverte a ordem padrão). É como se evita downtime em
+  recurso que precisa ser recriado.
+- **`ignore_changes = [atributo]`** — o Terraform para de acusar drift naquele
+  atributo. Útil quando algo externo altera legitimamente o recurso (um
+  autoscaler mudando a contagem, uma tag adicionada por política).
+- **`prevent_destroy = true`** — o `destroy` falha com erro em vez de
+  executar. Proteção pra recurso crítico (banco de produção, golden image).
 
 > **Conexão com o objetivo:** o mapa do `for_each` é o padrão de tenant —
 > cada entrada é um tenant, adicionar uma linha provisiona um novo, remover
-> destrói só aquele.
+> destrói só aquele. Sem isso, um tenant removido do meio da lista derrubaria
+> os tenants seguintes.
 
-## Base comum
+## O que vamos criar
 
-`main.tf`:
+`terraform/stacks/web-count-foreach/` — `main.tf` (imagem compartilhada) +
+`count.tf` (evolui durante o lab: primeiro `count`, depois `for_each`).
 
-```hcl
+## Passo 1 — criar a base
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "terraform/stacks/web-count-foreach/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -34,13 +98,10 @@ resource "docker_image" "nginx" {
   name         = "nginx:latest"
   keep_locally = true
 }
-```
+'@
 
-## Experimento 1 — count
-
-`count.tf`:
-
-```hcl
+# count.tf — versão inicial, com `count`. Vai evoluir durante o lab.
+Write-RepoFile "terraform/stacks/web-count-foreach/count.tf" @'
 variable "apps" {
   type    = list(string)
   default = ["a", "b", "c"]
@@ -51,7 +112,10 @@ resource "docker_container" "app" {
   name  = "lab09-${var.apps[count.index]}"
   image = docker_image.nginx.image_id
 }
+'@
 ```
+
+## Passo 2 — Experimento 1: o problema do `count`
 
 Da raiz `labs/`:
 
@@ -71,7 +135,7 @@ terraform -chdir=terraform/stacks/web-count-foreach plan
 `docker_container.app[2]` (que era `"c"`), porque com `count` a identidade é o
 **índice** — ao remover o índice 1, tudo depois dele "escorrega" uma posição.
 
-## Experimento 2 — for_each
+## Passo 3 — Experimento 2: `for_each` resolve
 
 Substitua o `resource` de `count.tf` pela versão com `for_each` (mesmo
 arquivo, ou um `foreach.tf` separado — tanto faz, é a mesma pasta):
@@ -99,7 +163,7 @@ outros dois nem aparecem no plan. Com `for_each` a identidade é a **chave**.
 Anote a diferença com suas palavras nas Notas. Isso cai na prova e, mais
 importante, é a diferença entre um deploy tranquilo e um incidente em produção.
 
-## Experimento 3 — lifecycle
+## Passo 4 — Experimento 3: `lifecycle`
 
 Adicione ao `resource "docker_container" "app"`:
 
