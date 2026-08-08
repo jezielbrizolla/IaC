@@ -59,12 +59,30 @@ os labs 00–14 (Docker) não precisam de nada disto.
    ```powershell
    wsl sudo apt update
    wsl sudo apt install -y python3-pip
-   wsl pip install ansible pywinrm
-   wsl ansible --version
+   wsl pip install --break-system-packages ansible pywinrm
    ```
 
    `sudo` pede senha — precisa rodar num terminal de verdade (não dá pra
-   automatizar isso num script não-interativo).
+   automatizar isso num script não-interativo). O `--break-system-packages`
+   é necessário em Ubuntu recente (PEP 668, "externally-managed-environment")
+   — sem risco real aqui porque essa distro WSL é só pra rodar o Ansible
+   deste lab, não é sistema compartilhado.
+
+   O `pip install --user` (padrão sem root) instala em `~/.local/bin`, que
+   **não** entra no `PATH` de invocações não-interativas do `wsl` — o
+   `.bashrc` do Ubuntu só carrega o `PATH` em sessão interativa, e
+   `wsl <comando>` roda em modo não-interativo. Adicione ao `PATH` mesmo
+   assim (vale pra quando você abrir um terminal *dentro* do WSL):
+   ```bash
+   # dentro do WSL Ubuntu
+   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+   ```
+   Mas pra chamar Ansible **a partir do PowerShell** (o padrão dos labs
+   daqui pra frente), use sempre `wsl -e bash -ic "..."` — o `-i` força
+   modo interativo, que lê o `.bashrc` e acha o `ansible` no `PATH`:
+   ```powershell
+   wsl -e bash -ic "ansible --version"
+   ```
 
 ## Bloco 5 — Kubernetes local (mini-KOB)
 
@@ -97,7 +115,12 @@ where.exe oscdimg                # mostra o caminho do executável
 helm version
 kubectl version --client
 ```
-No WSL: `ansible --version` e `python3 -c "import winrm"` sem erro.
+Do PowerShell:
+
+```powershell
+wsl -e bash -ic "ansible --version"
+wsl -e bash -ic "python3 -c 'import winrm; print(1)'"
+```
 
 ## Recursos de memória
 Os labs do Bloco 5 sobem 2 VMs de 4GB cada (control-plane + worker) — reserve
