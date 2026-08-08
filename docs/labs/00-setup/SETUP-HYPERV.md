@@ -47,12 +47,24 @@ os labs 00–14 (Docker) não precisam de nada disto.
 
 5. **Ansible no WSL** (o Ansible controla Windows via WinRM, mas o Ansible em
    si roda melhor em Linux — por isso via WSL, não PowerShell):
-   ```bash
-   # dentro do WSL Ubuntu
-   sudo apt update && sudo apt install -y python3-pip
-   pip install ansible pywinrm
-   ansible --version
+
+   > **Confira a distro padrão antes de rodar qualquer coisa:**
+   > `wsl -l -v` deve mostrar `Ubuntu` marcada com `*`. Se o Docker
+   > Desktop estiver instalado, ele cria uma distro interna
+   > (`docker-desktop`) sem `sudo`/`python3`/nada de userland — se ela
+   > virar a padrão (acontece sozinho às vezes), qualquer `wsl <comando>`
+   > cai nela e tudo dá "not found". Corrija com:
+   > `wsl --set-default Ubuntu`.
+
+   ```powershell
+   wsl sudo apt update
+   wsl sudo apt install -y python3-pip
+   wsl pip install ansible pywinrm
+   wsl ansible --version
    ```
+
+   `sudo` pede senha — precisa rodar num terminal de verdade (não dá pra
+   automatizar isso num script não-interativo).
 
 ## Bloco 5 — Kubernetes local (mini-KOB)
 
