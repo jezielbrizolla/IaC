@@ -5,13 +5,10 @@
 ## Objetivo
 O ciclo completo, e entender o que é o state.
 
-## Onde o código mora
-`terraform/stacks/web-basic/main.tf`
+## Teoria
 
-Um **stack** é uma unidade independente de infraestrutura, com seu próprio state.
-No shape do repo, cada stack é um diretório em `terraform/stacks/`.
-
-## O que transfere do Packer
+**O que muda em relação ao Packer.** A estrutura do arquivo é familiar, e boa
+parte transfere direto:
 
 | Packer | Terraform | Mesmo papel? |
 |---|---|---|
@@ -20,13 +17,84 @@ No shape do repo, cada stack é um diretório em `terraform/stacks/`.
 | `packer fmt` / `validate` | `terraform fmt` / `validate` | Idênticos |
 | `packer build` | `terraform apply` | **Não** — e a diferença é o ponto deste lab |
 
-Packer é **imutável**: roda uma vez, produz artefato, esquece. Terraform é
-**convergente**: guarda um mapa do que criou (o **state**) e a cada execução
-compara o declarado com o que existe de verdade.
+Packer é **imutável**: roda uma vez, produz um artefato, e esquece. Não tem
+memória de execuções anteriores; rodar duas vezes produz duas imagens.
 
-## O stack
-`terraform/stacks/web-basic/main.tf`:
-```hcl
+Terraform é **convergente**: ele guarda um mapa do que criou e, a cada
+execução, compara o que você declarou com o que existe de verdade — e faz só
+a diferença. Rodar duas vezes com o mesmo código não cria nada na segunda.
+
+**Esse mapa é o `state`, e é o conceito central deste lab.**
+
+**O que o state realmente é** (e não é): um arquivo JSON que diz *"o recurso
+que eu chamo de `docker_container.web` é o objeto real de ID
+`cfe25ba1767…`"*. Só isso. Não é mágica, não é banco de dados, não é
+inventário do que existe na sua infra.
+
+A consequência que surpreende: **sem o state, o Terraform é cego.** Ele não
+sai vasculhando o mundo procurando coisas que ele criou — ele confia no
+arquivo. Se você apagar o state com o container rodando, o Terraform vai
+querer criar tudo de novo, porque perdeu o mapa. Em produção isso é
+infraestrutura órfã: recursos rodando (e sendo cobrados) que ferramenta
+nenhuma gerencia mais.
+
+**O `plan` compara três coisas, não duas:**
+
+```text
+código (main.tf)  ←→  state (o mapa)  ←→  realidade (o refresh)
+```
+
+- **Código vs state divergem** → você mudou a config, o Terraform vai aplicar
+- **State vs realidade divergem** → alguém mexeu por fora, isso é **drift**
+
+Entender isso desmistifica quase tudo que vem depois — drift, `import`,
+`moved`, state perdido são todos consequência direta desse desenho.
+
+**Um `stack`** é uma unidade independente de infraestrutura, com seu próprio
+state. No shape deste repo, cada stack é um diretório em `terraform/stacks/`.
+Stacks separados = states separados = falhas isoladas.
+
+## O que vamos criar
+
+`terraform/stacks/web-basic/main.tf` — três blocos:
+
+- **`terraform {}`** — versão mínima do CLI e quais providers baixar. Análogo
+  ao `packer {}`.
+- **`provider "docker" {}`** — configura como falar com o Docker. Vazio aqui
+  porque o provider acha o daemon local sozinho.
+- **`resource`** — **o estado desejado**. Você declara o que deve existir; o
+  Terraform descobre como chegar lá.
+
+Repare que `docker_container.web` referencia `docker_image.nginx.image_id` —
+isso cria uma **dependência implícita**, e o Terraform sabe sozinho que
+precisa criar a imagem antes do container. Esse mecanismo é o assunto do
+Lab 08.
+
+`keep_locally = true` evita que o `destroy` apague a imagem local (senão você
+re-baixa o nginx toda vez).
+
+> Sobre o bloco `ports`: só `internal` é obrigatório. `external` é
+> `optional + computed` no schema do provider — se você omitir, o Docker
+> atribui uma porta aleatória no host e o Terraform grava ela no state. Ou
+> seja, omitir não significa "não expõe", significa "expõe numa porta que
+> você não escolheu" — sintoma diferente na hora de debugar.
+
+## Passo 1 — criar o stack
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `terraform fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "terraform/stacks/web-basic/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -53,28 +121,10 @@ resource "docker_container" "web" {
     external = 8080
   }
 }
+'@
 ```
 
-Três blocos:
-- `terraform {}` — versão mínima do CLI e quais providers baixar. Análogo ao
-  `packer {}`.
-- `provider "docker" {}` — configura como falar com o Docker. Vazio aqui porque
-  o provider acha o daemon local sozinho.
-- `resource` — **o estado desejado**. Você declara o que deve existir; o
-  Terraform descobre como chegar lá. Repare que `docker_container.web`
-  referencia `docker_image.nginx.image_id` — isso cria uma dependência
-  implícita, o Terraform sabe que precisa criar a imagem antes do container.
-
-`keep_locally = true` evita que o `destroy` apague a imagem local (senão você
-re-baixa o nginx toda vez).
-
-> Sobre o bloco `ports`: só `internal` é obrigatório. `external` é
-> `optional + computed` no schema do provider — se você omitir, o Docker
-> atribui uma porta aleatória no host e o Terraform grava ela no state. Ou
-> seja, omitir não significa "não expõe", significa "expõe numa porta que
-> você não escolheu" — sintoma diferente na hora de debugar.
-
-## Rodar
+## Passo 2 — rodar o ciclo completo
 
 O Terraform roda no diretório atual por padrão, mas aceita `-chdir` para rodar
 de qualquer lugar — é assim que mantemos a regra de nunca precisar de `cd`:
@@ -88,39 +138,43 @@ terraform -chdir=terraform/stacks/web-basic apply -auto-approve
 curl http://localhost:8080
 ```
 
-Não destrua ainda — o passo abaixo precisa do state existindo.
+**Não destrua ainda** — o passo abaixo precisa do state existindo.
 
-## O passo que mais rende
+## Passo 3 — o passo que mais rende: leia o state
 
-Depois do `apply`, **abra `terraform/stacks/web-basic/terraform.tfstate` e leia**.
-É JSON puro.
+Depois do `apply`, **abra `terraform/stacks/web-basic/terraform.tfstate` e
+leia**. É JSON puro.
 
 ```powershell
 Get-Content terraform/stacks/web-basic/terraform.tfstate | ConvertFrom-Json |
   Select-Object -ExpandProperty resources | Select-Object type, name
 ```
 
-Procure `resources[].instances[0].attributes` e compare com o que aparece em
-`docker inspect lab06-web`. Note também:
-- `serial` — contador que incrementa a cada mudança
-- `lineage` — ID único deste state, usado para detectar se você trocou de state
-  por engano
+Procure `resources[].instances[0].attributes` e **compare o `id` com o que
+aparece em `docker inspect lab06-web --format '{{.Id}}'`** — são o mesmo
+valor, caractere por caractere. Isso é a prova concreta de que o state é só
+um mapa entre nome lógico e ID real.
 
-Entender que o state é **só um mapa entre a sua config e IDs do mundo real**
-desmistifica quase tudo que vem depois — drift, import, `moved`, tudo parte daí.
+Note também:
+
+- `serial` — contador que incrementa a cada mudança
+- `lineage` — ID único deste state, usado para detectar se você trocou de
+  state por engano
 
 ## Quebre isto
+
 1. Com o container no ar, faça backup e apague o state:
+
    ```powershell
    Copy-Item terraform/stacks/web-basic/terraform.tfstate terraform/stacks/web-basic/terraform.tfstate.bak
    Remove-Item terraform/stacks/web-basic/terraform.tfstate
    terraform -chdir=terraform/stacks/web-basic plan
    ```
+
 2. Leia a saída: o Terraform quer **criar tudo de novo** — não porque o recurso
    sumiu (`docker ps` mostra o container vivo), mas porque ele perdeu o mapa.
-   Sem state, o Terraform é cego: ele não inspeciona o mundo procurando o que
-   ele criou, ele confia no arquivo.
 3. Restaure o backup e destrua normalmente:
+
    ```powershell
    Move-Item terraform/stacks/web-basic/terraform.tfstate.bak terraform/stacks/web-basic/terraform.tfstate -Force
    terraform -chdir=terraform/stacks/web-basic destroy -auto-approve
@@ -133,6 +187,15 @@ desmistifica quase tudo que vem depois — drift, import, `moved`, tudo parte da
 `curl http://localhost:8080` retorna a página padrão do nginx, você leu o
 `terraform.tfstate` e sabe explicar o que ele guarda, e o `destroy` deixa
 `docker ps -a` sem o container.
+
+## Limpeza
+
+```powershell
+terraform -chdir=terraform/stacks/web-basic destroy -auto-approve
+```
+
+> Este stack **continua sendo usado no Lab 07**, que o expande em vez de criar
+> outro. Não apague os arquivos — só destrua os recursos.
 
 ## Notas
 
