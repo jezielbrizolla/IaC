@@ -23,6 +23,12 @@ manifest.json.lock
 # fica de fora, como valvula de escape para teste local.
 *.secret.pkrvars.hcl
 
+# ISOs (Windows Server, Ubuntu Server) - vao para labs/ISOs/, sao GB de
+# binario baixado, nunca pertencem ao git. Convencao original (SETUP-HYPERV.md)
+# era C:\ISOs\ fora do repo; se ficar dentro de labs/, esta regra protege.
+ISOs/
+*.iso
+
 # Logs de automacao (gerados em runtime)
 automation/**/logs/
 # Gerado por setup-docker-autostart.ps1 a cada execucao (heredoc no proprio
