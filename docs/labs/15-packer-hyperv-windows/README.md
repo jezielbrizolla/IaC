@@ -12,10 +12,11 @@ agora com controle total do processo no seu PC.
 - Hyper-V habilitado e funcionando (`Get-VMSwitch` retorna ao menos um switch)
 - Virtual Switch externo criado (`LabSwitch` — já feito no setup, ver
   [`docs/labs/00-setup/SETUP-HYPERV.md`](../00-setup/SETUP-HYPERV.md))
-- ISO do Windows Server 2022 Evaluation baixada em `C:\ISOs\SERVER_ISO_2022_Eval.iso`
-  (grátis em <https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022>
-  — é o único pré-requisito que não dá pra automatizar num script: o download
-  exige aceitar os termos no site da Microsoft)
+- ISO do Windows Server 2022 baixada em `labs\ISOs\` — Evaluation gratuita
+  (<https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022>)
+  ou mídia de Volume License (ex: benefício Visual Studio subscription).
+  É o único pré-requisito que não dá pra automatizar num script: o download
+  exige aceitar termos/licença manualmente.
 
 ## Teoria
 
@@ -138,7 +139,7 @@ build {
 '@
 
 Set-Content -Path "packer/vars/win2022-base.pkrvars.hcl" -Encoding UTF8 -Value @'
-iso_path       = "C:/ISOs/SERVER_ISO_2022_Eval.iso"
+iso_path       = "C:/Users/jezie/OneDrive/Documentos/Estudos/IaC/labs/ISOs/en-us_windows_server_2022_updated_dec_2025_x64_dvd_84450f64.iso"
 switch_name    = "LabSwitch"
 vm_name        = "lab15-win2022"
 disk_size_mb   = 40960
@@ -271,11 +272,11 @@ Set-Content -Path "packer/files/win2022-base/Autounattend.xml" -Encoding UTF8 -V
 '@
 ```
 
-Se sua ISO estiver em outro caminho, edite `iso_path` em
-`packer/vars/win2022-base.pkrvars.hcl` depois de rodar o script — é o único
-valor que costuma variar de máquina pra máquina.
+Se sua ISO estiver em outro nome/caminho, edite `iso_path` em
+`packer/vars/win2022-base.pkrvars.hcl` depois de rodar o script — é o valor
+que mais costuma variar de máquina pra máquina.
 
-> **Por que `C:/ISOs/...` com barra normal, não `C:\\ISOs\\...`:** HCL trata
+> **Por que barra normal (`/`), não `C:\\ISOs\\...`:** HCL trata
 > `\` como início de sequência de escape dentro de string — precisaria
 > dobrar (`\\`) pra representar uma barra literal. Barra normal (`/`)
 > funciona igual no Windows e evita esse detalhe todo.

@@ -21,10 +21,18 @@ os labs 00–14 (Docker) não precisam de nada disto.
    mas cabo é mais estável para os labs).
 
 3. **Baixar as ISOs**:
-   - Windows Server 2022 Evaluation (grátis, 180 dias):
-     <https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022>
-   - Ubuntu Server 24.04 LTS: <https://ubuntu.com/download/server>
-   - Salve ambas em `C:\ISOs\` (os labs assumem esse caminho).
+   - Windows Server: Evaluation gratuita (180 dias) em
+     <https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022>,
+     **ou** mídia de Volume License se você tiver acesso (ex: benefício
+     Visual Studio subscription) — os labs não exigem uma edição específica,
+     só ajustar `iso_path` e, se a mídia pedir chave durante o setup,
+     adicionar `<ProductKey>` no `Autounattend.xml` (mídia VL normalmente
+     **não** pede, já vem com a KMS client setup key).
+   - Ubuntu Server 24.04 LTS: <https://ubuntu.com/download/server> — só
+     necessária a partir do Lab 19 (Bloco 5), pode baixar mais pra frente.
+   - Salve em `labs\ISOs\` (dentro do repo, mas **ignorado pelo git** —
+     `.gitignore` já tem `ISOs/` e `*.iso`, não precisa se preocupar em
+     versionar sem querer).
 
 4. **Ansible no WSL** (o Ansible controla Windows via WinRM, mas o Ansible em
    si roda melhor em Linux — por isso via WSL, não PowerShell):
@@ -61,8 +69,7 @@ sozinhas (comandos no lab 19).
 ## Critério de conclusão deste setup
 ```powershell
 Get-VMSwitch                     # mostra "LabSwitch"
-Test-Path C:\ISOs\SERVER_ISO_2022_Eval.iso   # True
-Test-Path C:\ISOs\ubuntu-24.04-live-server-amd64.iso   # True
+Get-ChildItem labs\ISOs\*.iso    # sua(s) ISO(s) do Windows Server aparecem
 helm version
 kubectl version --client
 ```
