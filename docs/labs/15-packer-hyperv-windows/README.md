@@ -351,8 +351,17 @@ O build completa sem erro, o provisioner imprime o `WindowsProductName`
 
 ## Limpeza
 
+O Packer já destrói a VM de build sozinho ao final (é o comportamento
+padrão — você nunca fica com a VM de instalação rodando, só a imagem
+capturada). Não sobra nada pra remover aí.
+
+O VHDX exportado em `packer/output-win2022/`, por outro lado, **vale a
+pena manter** — é a base pra criar a VM do Lab 16 sem reinstalar o Windows
+do zero (o Lab 16 já assume isso: "VM Windows Server do lab 15 rodando **ou
+criar uma nova manualmente**" — a golden image é justamente o atalho pra
+essa segunda opção). Só limpe quando o Lab 16 não precisar mais dela:
+
 ```powershell
-Get-VM lab15-win2022 -ErrorAction SilentlyContinue | Remove-VM -Force
 Remove-Item -Recurse -Force packer/output-win2022 -ErrorAction SilentlyContinue
 ```
 

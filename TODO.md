@@ -104,16 +104,19 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 
 ## Agora
 
-**Bloco 3 (Capstone) fechado — Labs 12, 13 e 14 completos.** `task
-capstone:build`/`capstone:destroy` validados de ponta a ponta. Falta só, por
-decisão sua (não é bloqueio técnico): pedir pra alguém — ou você mesmo, dias
-depois — seguir só o README sem ajuda, o critério real do Lab 14.
+**Bloco 3 (Capstone) fechado — Labs 12, 13 e 14 completos.**
 
-**Próximo: Bloco 4 — Windows Server (Hyper-V)**, começando pelo Lab 15
-(`packer-hyperv-windows`). Já tem 1 item feito (`LabSwitch`). Ainda não
-iniciado de verdade — ver [`docs/ANALISE-MELHORIAS.md`](docs/ANALISE-MELHORIAS.md)
-pra contexto de por que esse bloco é mais pesado em tempo de parede
-(download de ISO, instalação desassistida) do que os anteriores.
+**Lab 15 (Packer + Hyper-V) fechado — golden image Windows Server 2022
+construída com sucesso** (VHDX 10.25GB, `packer/output-win2022/`). Quatro
+problemas reais resolvidos no caminho (`oscdimg` ausente, falta de RAM,
+limitação estrutural do teclado sintético em Gen2, `ProductKey` exigido por
+mídia VL) — detalhes nas Notas do README. Os dois "Quebre isto" foram
+pulados por decisão informada (10 anos de experiência real em build de
+imagem). **VHDX mantido de propósito** — vira a base da VM do Lab 16, em vez
+de reinstalar o Windows do zero.
+
+**Próximo: Lab 16 — Ansible via WinRM.** Vai reaproveitar o VHDX do Lab 15
+pra criar a VM de teste (mais rápido que reinstalar). Ainda não iniciado.
 
 Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
@@ -155,9 +158,9 @@ Pendências que não pertencem a um lab específico:
 | 1 — Packer | 01–05 | ✅ 46/46 |
 | 2 — Terraform | 06–11 | ✅ 73/73 |
 | 3 — Capstone | 12–14 | 🔶 35/36 |
-| 4 — Windows/Hyper-V | 15–18 | 🔶 8/42 |
+| 4 — Windows/Hyper-V | 15–18 | 🔶 11/42 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **181/269 (67%)** |
+| **Total** | | **184/269 (68%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -538,9 +541,15 @@ cliques em wizard, e o WinRM é como o Packer conversa com Windows.
 - [x] Observar no Hyper-V Manager: VM criada, Windows instalando sozinho
 - [x] WinRM conecta e provisioner PowerShell roda com sucesso
 - [x] Build completa → imagem exportada em `packer/output-win2022/` (VHDX de 10.25GB confirmado)
-- [ ] **Quebre:** comentar `cd_files` → timeout de WinRM
-- [ ] **Quebre:** dessincronizar senha entre Autounattend e vars → falha de auth
-- [ ] Limpeza: remover VM do Hyper-V e pasta de output
+- [x] **Quebre:** comentar `cd_files` → timeout de WinRM — *pulado por decisão
+      informada: 10 anos de experiência real em build de imagem já cobrem
+      esse cenário; os 4 problemas reais resolvidos nesta sessão (oscdimg,
+      RAM, Gen2, ProductKey) já foram o exercício de troubleshooting*
+- [x] **Quebre:** dessincronizar senha entre Autounattend e vars → falha de auth — *idem*
+- [x] Limpeza: VM já foi destruída pelo próprio Packer (padrão do build).
+      `packer/output-win2022/` (VHDX 10.25GB) **mantido de propósito** —
+      decisão do JZ, vira a base da VM do Lab 16 em vez de reinstalar
+      Windows do zero. Apagar quando o Lab 16 não precisar mais dele.
 
 ### 16-ansible-windows-winrm
 
