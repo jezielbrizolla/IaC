@@ -520,20 +520,18 @@ Replica o processo usado para golden images de servidor.
 
 **Ensina:** instalação desassistida — o `Autounattend.xml` substitui horas de
 cliques em wizard, e o WinRM é como o Packer conversa com Windows.
+**Artefatos:** `packer/templates/win2022-base.pkr.hcl` + `packer/vars/win2022-base.pkrvars.hcl` + `packer/files/win2022-base/Autounattend.xml`
 
 - [x] Virtual Switch externo criado no Hyper-V (`LabSwitch`) — *feito fora de ordem, durante o setup do ambiente*
-- [ ] ISO do Windows Server 2022 Evaluation baixada
-- [ ] Criar `variables.pkrvars.hcl` com paths e credenciais
-- [ ] Criar `win2022.pkr.hcl` com builder `hyperv-iso`
-- [ ] Criar `Autounattend.xml` com partições UEFI + auto-login + WinRM
-- [ ] `packer init .` → plugins baixados
-- [ ] `packer validate -var-file="variables.pkrvars.hcl" .` → sem erros
-- [ ] `packer build -var-file="variables.pkrvars.hcl" .` → build inicia
+- [ ] ISO do Windows Server 2022 Evaluation baixada em `C:\ISOs\`
+- [ ] Rodar o script do Passo 1 do README — cria os 3 arquivos de uma vez
+- [ ] `task packer:validate IMAGE=win2022-base` → sem erros
+- [ ] `task packer:build IMAGE=win2022-base -- -var-file="vars/win2022-base.pkrvars.hcl"` → build inicia
 - [ ] Observar no Hyper-V Manager: VM criada, Windows instalando sozinho
 - [ ] WinRM conecta e provisioner PowerShell roda com sucesso
-- [ ] Build completa → imagem exportada em `output-win2022/`
-- [ ] **Quebre:** remover Autounattend dos cd_files → timeout de WinRM
-- [ ] **Quebre:** dessincronizar senha entre Autounattend e variables → falha de auth
+- [ ] Build completa → imagem exportada em `packer/output-win2022/`
+- [ ] **Quebre:** comentar `cd_files` → timeout de WinRM
+- [ ] **Quebre:** dessincronizar senha entre Autounattend e vars → falha de auth
 - [ ] Limpeza: remover VM do Hyper-V e pasta de output
 
 ### 16-ansible-windows-winrm
