@@ -29,6 +29,12 @@ manifest.json.lock
 ISOs/
 *.iso
 
+# Golden images e VMs Hyper-V (Blocos 4/5) - VHDX sao dezenas de GB,
+# saida de build (packer/output-*) ou VM em execucao, nunca pertencem ao git.
+*.vhd
+*.vhdx
+packer/output-*/
+
 # Logs de automacao (gerados em runtime)
 automation/**/logs/
 # Gerado por setup-docker-autostart.ps1 a cada execucao (heredoc no proprio
