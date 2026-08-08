@@ -357,3 +357,37 @@ Remove-Item -Recurse -Force packer/output-win2022 -ErrorAction SilentlyContinue
 ```
 
 ## Notas
+
+- **Build completo em 7min04s**, com sucesso de ponta a ponta na primeira
+  vez que todos os problemas abaixo foram resolvidos juntos — WinRM
+  conectou, o provisioner imprimiu `WindowsProductName` e o timestamp, e a
+  imagem foi exportada (`lab15-win2022.vhdx`, 10.25GB, confirmado por
+  tamanho real do arquivo, não só pelo log do Packer).
+- **Esse lab levou 4 rodadas de depuração real antes de completar** — cada
+  uma um problema genuinamente diferente, não o mesmo erro reaparecendo:
+  1. `oscdimg` ausente (dependência do Windows ADK não documentada
+     originalmente) — `could not find a supported CD ISO creation command`.
+  2. Falta de RAM livre no host (`vmmemWSL` do Docker/WSL2 comendo 2.1GB) —
+     `Não é possível alocar 4096 MB de RAM`. Resolvido com `wsl --shutdown`.
+  3. **A causa mais interessante:** Generation 2 (UEFI) não conseguia
+     entregar tecla a tempo pro prompt "Press any key to boot from CD or
+     DVD..." — três tentativas de ajustar `boot_command` (timing e
+     repetição) falharam do mesmo jeito, porque não era problema de
+     timing — é limitação estrutural: o teclado sintético do Gen2 exige
+     driver carregado, que não existe ainda nesse ponto do boot. Resolvido
+     trocando pra **Generation 1** (teclado PS/2 emulado, funciona desde o
+     instante zero) — troca de abordagem, não ajuste fino.
+  4. Mídia Volume License exigindo `<ProductKey>` no answer file
+     (`Windows cannot read the <ProductKey> setting`), diferente da
+     Evaluation. Resolvido com a GVLK pública do Windows Server 2022
+     Standard, confirmada na documentação oficial da Microsoft antes de
+     aplicar (não seria certo arriscar mais um build de 7min com uma chave
+     chutada de memória).
+- **Warning não-fatal na limpeza final, causa raiz confirmada:** o Packer
+  avisou que não conseguiu apagar `output-win2022\lab15-win2022\Snapshots`
+  por "direitos de acesso insuficientes". `Get-Acl` confirmou: a própria
+  exportação do Hyper-V aplica um **Deny explícito** pra "Todos" em
+  `DeleteSubdirectoriesAndFiles` nessa pasta (trava de segurança padrão
+  contra apagar snapshot sem querer) — Deny explícito vence Allow, mesmo
+  com o usuário tendo `FullControl`. A pasta fica vazia e inofensiva; não
+  afeta o VHDX exportado. Comportamento esperado do Hyper-V, não bug.

@@ -155,9 +155,9 @@ Pendências que não pertencem a um lab específico:
 | 1 — Packer | 01–05 | ✅ 46/46 |
 | 2 — Terraform | 06–11 | ✅ 73/73 |
 | 3 — Capstone | 12–14 | 🔶 35/36 |
-| 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
+| 4 — Windows/Hyper-V | 15–18 | 🔶 8/42 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **174/272 (64%)** |
+| **Total** | | **181/269 (67%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -531,13 +531,13 @@ cliques em wizard, e o WinRM é como o Packer conversa com Windows.
 **Artefatos:** `packer/templates/win2022-base.pkr.hcl` + `packer/vars/win2022-base.pkrvars.hcl` + `packer/files/win2022-base/Autounattend.xml`
 
 - [x] Virtual Switch externo criado no Hyper-V (`LabSwitch`) — *feito fora de ordem, durante o setup do ambiente*
-- [ ] ISO do Windows Server 2022 Evaluation baixada em `C:\ISOs\`
-- [ ] Rodar o script do Passo 1 do README — cria os 3 arquivos de uma vez
-- [ ] `task packer:validate IMAGE=win2022-base` → sem erros
-- [ ] `task packer:build IMAGE=win2022-base -- -var-file="vars/win2022-base.pkrvars.hcl"` → build inicia
-- [ ] Observar no Hyper-V Manager: VM criada, Windows instalando sozinho
-- [ ] WinRM conecta e provisioner PowerShell roda com sucesso
-- [ ] Build completa → imagem exportada em `packer/output-win2022/`
+- [x] ISO do Windows Server 2022 baixada em `labs\ISOs\` (mídia VL, benefício Visual Studio subscription — não Evaluation)
+- [x] Rodar o script do Passo 1 do README — cria os 3 arquivos de uma vez
+- [x] `task packer:validate IMAGE=win2022-base` → sem erros
+- [x] `task packer:build IMAGE=win2022-base -- -var-file="vars/win2022-base.pkrvars.hcl"` → build inicia
+- [x] Observar no Hyper-V Manager: VM criada, Windows instalando sozinho
+- [x] WinRM conecta e provisioner PowerShell roda com sucesso
+- [x] Build completa → imagem exportada em `packer/output-win2022/` (VHDX de 10.25GB confirmado)
 - [ ] **Quebre:** comentar `cd_files` → timeout de WinRM
 - [ ] **Quebre:** dessincronizar senha entre Autounattend e vars → falha de auth
 - [ ] Limpeza: remover VM do Hyper-V e pasta de output
