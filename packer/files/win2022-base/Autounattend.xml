@@ -41,6 +41,10 @@
         </OSImage>
       </ImageInstall>
       <UserData>
+        <ProductKey>
+          <Key>VDYBN-27WPP-V4HQT-9VMD4-VMK7H</Key>
+          <WillShowUI>Never</WillShowUI>
+        </ProductKey>
         <AcceptEula>true</AcceptEula>
       </UserData>
     </component>

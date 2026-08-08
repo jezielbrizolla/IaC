@@ -193,6 +193,10 @@ Set-Content -Path "packer/files/win2022-base/Autounattend.xml" -Encoding UTF8 -V
         </OSImage>
       </ImageInstall>
       <UserData>
+        <ProductKey>
+          <Key>VDYBN-27WPP-V4HQT-9VMD4-VMK7H</Key>
+          <WillShowUI>Never</WillShowUI>
+        </ProductKey>
         <AcceptEula>true</AcceptEula>
       </UserData>
     </component>
@@ -282,6 +286,21 @@ que mais costuma variar de máquina pra máquina.
 > segurança de boot). Junto com a troca, o particionamento no
 > `Autounattend.xml` também muda: BIOS/MBR usa uma partição `Primary`
 > única marcada `Active`, não o trio EFI+MSR+Primary que UEFI/GPT exige.
+>
+> **Por que tem `<ProductKey>` no `UserData`:** mídia de Volume License
+> (como a usada aqui, benefício Visual Studio subscription) para o Setup com
+> `Windows cannot read the <ProductKey> setting from the unattend answer
+> file` se o answer file não declarar uma chave — diferente da Evaluation,
+> que segue sem pedir nada. A chave usada
+> (`VDYBN-27WPP-V4HQT-9VMD4-VMK7H`) é a **GVLK pública do Windows Server
+> 2022 Standard** (Generic Volume License Key), publicada pela própria
+> Microsoft em
+> <https://learn.microsoft.com/windows-server/get-started/kms-client-activation-keys>
+> — não é a licença real de ninguém, é a chave "genérica" que mídia VL usa
+> pra instalar sem prompt, mantendo a ativação de verdade pro KMS host
+> depois (o mesmo fluxo instalar-com-GVLK → ativar-via-KMS de produção).
+> Se sua ISO for outra edição (ex: Datacenter), troque pela chave
+> correspondente na mesma página.
 
 ## Passo 2 — rodar o build
 
