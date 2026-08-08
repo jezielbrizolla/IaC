@@ -17,7 +17,46 @@ agora com controle total do processo no seu PC.
   — é o único pré-requisito que não dá pra automatizar num script: o download
   exige aceitar os termos no site da Microsoft)
 
-## O conceito
+## Teoria
+
+**Golden image — a ideia por trás de tudo.** Em vez de instalar o Windows
+numa VM e configurar cada máquina na mão (o jeito manual: instalar, aplicar
+patches, instalar agente, configurar firewall, repetir pra cada servidor
+novo), você constrói **uma imagem** com tudo isso já pronto, testado, e
+reutilizável. Cada VM nova nasce a partir dela — não é configurada depois,
+**já nasce configurada**. É o mesmo princípio de imutabilidade que você já
+viu nos Labs de Packer com Docker (01-05): a imagem é o artefato versionado;
+a VM é só uma instância descartável dela. A diferença aqui é que "imagem" e
+"instalar o sistema operacional do zero" são a mesma coisa — não tem
+`FROM ubuntu:22.04` pra herdar, o Packer precisa instalar o Windows inteiro
+antes de conseguir configurar qualquer coisa.
+
+**Por que a instalação precisa ser desassistida.** O instalador do Windows,
+por padrão, é interativo: idioma, partição, EULA, senha — tudo clique
+humano. O Packer não tem mão. A solução, que existe desde o Windows Vista
+(o "answer file"), é um XML que responde a todas essas perguntas antes de
+qualquer uma aparecer — é isso que o `Autounattend.xml` faz. O Windows
+Setup procura esse arquivo automaticamente numa mídia removível (o
+`cd_files` do Packer simula isso, montando o XML como um CD virtual junto
+da ISO de instalação).
+
+**Por que precisa de WinRM.** Depois que o Windows termina de instalar, o
+Packer ainda precisa **entrar** na VM pra rodar o provisioner (o
+equivalente Windows do que SSH faz nos Labs Linux). WinRM (Windows Remote
+Management) é esse canal — mas ele não vem habilitado por padrão numa
+instalação nova. Por isso o `Autounattend.xml` tem uma seção
+`FirstLogonCommands` que habilita o WinRM automaticamente no primeiro
+login: sem isso, o Windows instala perfeitamente, mas o Packer nunca
+consegue falar com ele, e o build trava até estourar o timeout.
+
+**Onde isso encaixa no pipeline maior.** O Packer aqui só faz uma coisa:
+constrói a imagem e para. Ele não fica rodando, não gerencia a VM depois.
+Quem consome essa imagem — cria N VMs a partir dela, decide quantas, onde —
+é o Terraform, no Lab 18 (provider Hyper-V). É o mesmo padrão
+Packer→manifest→Terraform do capstone (Labs 12-14), só que a "imagem" agora
+é um VHDX em vez de uma imagem Docker.
+
+## O que vamos criar
 
 Três peças, uma vez só:
 
