@@ -522,7 +522,7 @@ Replica o processo usado para golden images de servidor.
 > [Backlog](#backlog).
 >
 > **Pré-requisitos deste bloco:** ver [`docs/labs/00-setup/SETUP-HYPERV.md`](docs/labs/00-setup/SETUP-HYPERV.md)
-> (Hyper-V habilitado, Virtual Switch, ISOs, Ansible no WSL).
+> (Hyper-V habilitado, Virtual Switch, ISOs, `oscdimg`, Ansible no WSL).
 
 ### 15-packer-hyperv-windows
 

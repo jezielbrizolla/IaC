@@ -34,7 +34,18 @@ os labs 00–14 (Docker) não precisam de nada disto.
      `.gitignore` já tem `ISOs/` e `*.iso`, não precisa se preocupar em
      versionar sem querer).
 
-4. **Ansible no WSL** (o Ansible controla Windows via WinRM, mas o Ansible em
+4. **`oscdimg` (gera a CD-ROM virtual com o `Autounattend.xml`)** — sem isso,
+   o `packer build` do Lab 15 falha depois de ~15s com
+   `could not find a supported CD ISO creation command`, porque o Packer
+   monta o `cd_files` como uma ISO pequena, e no Windows isso exige o
+   `oscdimg` (parte do Windows ADK, mas dá pra instalar só ele):
+   ```powershell
+   winget install Microsoft.OSCDIMG
+   ```
+   Abra um terminal **novo** depois (PATH só atualiza em sessão nova) e
+   confirme: `where.exe oscdimg` deve mostrar o caminho.
+
+5. **Ansible no WSL** (o Ansible controla Windows via WinRM, mas o Ansible em
    si roda melhor em Linux — por isso via WSL, não PowerShell):
    ```bash
    # dentro do WSL Ubuntu
@@ -70,6 +81,7 @@ sozinhas (comandos no lab 19).
 ```powershell
 Get-VMSwitch                     # mostra "LabSwitch"
 Get-ChildItem labs\ISOs\*.iso    # sua(s) ISO(s) do Windows Server aparecem
+where.exe oscdimg                # mostra o caminho do executável
 helm version
 kubectl version --client
 ```
