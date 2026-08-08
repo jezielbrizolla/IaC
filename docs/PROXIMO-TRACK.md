@@ -10,8 +10,9 @@ O repo já tem um Track 0 (`labs/`, ver [TODO.md](../TODO.md)) cobrindo Packer
 e Terraform local-first, do zero até um mini-cluster Kubernetes replicando a
 stack de SRE do JZ (Bloco 5, "mini-KOB": cluster + Vault + PostgreSQL). Esse
 track é a **base de conceitos** — variável, state, módulo, dependência,
-`for_each`, provider. Está em andamento: Blocos 0–1 completos, Bloco 2
-(Terraform core) em progresso.
+`for_each`, provider. Status em 2026-08-08: Blocos 0–3 completos (setup,
+Packer, Terraform core, capstone), Bloco 4 (Windows/Hyper-V) em andamento
+(Lab 15 em progresso).
 
 Este documento descreve o **próximo track**, que vem depois da base estar
 fechada. Não substitui o Track 0 nem duplica seu conteúdo — assume que quem
@@ -20,13 +21,17 @@ identidade de tenant.
 
 ## Meta imediata (antes de começar o próximo track)
 
-- Terminar os labs de Terraform que faltam no Bloco 2: **10 (módulos)** e
-  **11 (state — import, drift, `moved`, `state rm`)**.
-- Meta: até sexta-feira desta semana. Não é promessa, é alvo.
-- Lab 10 é o mais importante dos dois pro que vem a seguir — é onde
-  container+rede+volume viram módulo reutilizável, chamado duas vezes com
-  inputs diferentes. É o padrão que o próximo track escala pra múltiplos
-  provedores.
+*(atualizado em 2026-08-08 — a versão anterior desta seção, sobre Labs 10/11,
+já foi cumprida)*
+
+- Terminar o Bloco 4 (Windows/Hyper-V, Labs 15–18) e o Bloco 5 (Kubernetes,
+  Labs 19–22) — fecha o Track 0 inteiro.
+- Lab 15 está em andamento: build de golden image Windows Server via
+  `hyperv-iso`, com licença de Volume License (benefício Visual Studio
+  subscription/Dell) — sem `<ProductKey>` no `Autounattend.xml` por enquanto,
+  porque mídia VL normalmente já embute a KMS client setup key (não pede
+  chave no setup; ativa via KMS depois — confirmado pela experiência real do
+  JZ com SCCM).
 
 ## O que vem depois — objetivo declarado pelo JZ
 
@@ -53,6 +58,17 @@ Traduzindo em escopo:
    planejamento (ver "Perguntas em aberto").
 4. **Fora de escopo por enquanto**: baremetal (Redfish/PXE/MAAS já estava
    anotado como gap conhecido no backlog do Track 0 — segue fora).
+
+**Moldura adicional (2026-08-08):** o JZ descreveu o objetivo como construir
+uma **réplica pessoal do ciclo de vida completo** de um gerenciador de nuvem
+corporativo — provisionar, autenticar, operar, em múltiplos provedores mais
+o ambiente local — pra entender o "end to end" na prática, não só cada peça
+isolada. Ele referenciou uma ferramenta interna da Dell como o tipo de coisa
+que quer entender por dentro (este documento **não** descreve nem especula
+sobre como essa ferramenta funciona — não é informação disponível aqui,
+só o objetivo de aprendizado que ela inspira). Isso reforça por que os itens
+1–3 acima precisam se comportar como uma plataforma coesa (provisionamento +
+autenticação + operação), não como três labs isolados de provider.
 
 ## Por que isso importa (contexto de carreira)
 
@@ -100,9 +116,16 @@ de fora por agora.
    (ambientes) do Track 0 já tocam nisso para um único provider — o novo
    track precisa decidir se cada nuvem tem seu próprio backend de state ou
    se existe um backend central com workspace por tenant×provider.
-3. **Credenciais:** como o "gerenciador local" autentica nas três nuvens
-   sem credencial hardcoded — Vault (já usado no Bloco 5 do Track 0) é
-   candidato natural pra reaproveitar.
+3. **Credenciais — respondida em 2026-08-08:** Vault open-source, local,
+   via Docker (`docker run hashicorp/vault` com volume persistente, ou o
+   padrão já usado no Lab 21 dentro do K8s). Confirmado pelo JZ como
+   necessário assim que o gerenciador existir. Vale usar os *secrets
+   engines* dinâmicos do Vault para AWS/Azure/GCP (credencial temporária
+   gerada sob demanda) em vez de token estático guardado — é mais próximo
+   do padrão real de produção e vira conteúdo de lab por si só. Ainda em
+   aberto: Vault standalone (fora do K8s, mais simples) vs. reaproveitar o
+   Vault do Lab 21 (dentro do cluster) — decidir quando desenhar o
+   gerenciador em detalhe.
 4. **Nível de paridade entre as três nuvens:** replicar o mesmo workload
    (ex: rede + storage + 1 VM) nas três, ou cada uma testa um serviço
    diferente? Paridade ajuda a comparar provider a provider (o "de-para" que
