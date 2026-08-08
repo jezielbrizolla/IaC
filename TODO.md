@@ -125,6 +125,12 @@ em [`docs/ANALISE-MELHORIAS.md`](docs/ANALISE-MELHORIAS.md).
 
 Pendências que não pertencem a um lab específico:
 
+- [ ] **Refazer os READMEs dos Labs 01–14 no formato novo** (explicação do
+      passo + um único script que cria tudo, em vez de arquivo por arquivo
+      em blocos separados — formato adotado a partir do Lab 15). Não fazer
+      agora — só quando o JZ pedir. Ao fazer, revalidar o conteúdo de cada
+      lab de novo (a revalidação do Lab 15 achou 2 bugs reais que estavam
+      lá desde a escrita original: namespace XML faltando, path desatualizado).
 - [ ] Adicionar tasks `tf:init` / `tf:plan` / `tf:apply` / `tf:destroy` ao
       `Taskfile.yml` — a regra era "só depois de fazer na mão"; já foi feito
       nos Labs 06/07, pode adicionar
