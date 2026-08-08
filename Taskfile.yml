@@ -43,7 +43,7 @@ tasks:
       - packer fmt -check -recursive templates/
 
   packer:validate:
-    desc: "Valida todos os templates (ou só um, com IMAGE=nome)"
+    desc: "Valida todos os templates (ou só um, com IMAGE=nome). Args extras (-var, -var-file) vão depois de -- (só valem com IMAGE=)"
     dir: '{{.PACKER_DIR}}'
     cmds:
       # Sintaxe POSIX: o Task interpreta os comandos com mvdan/sh (shell
@@ -51,7 +51,7 @@ tasks:
       # Get-ChildItem/Write-Host aqui.
       - |
         if [ -n "{{.IMAGE}}" ]; then
-          packer validate "templates/{{.IMAGE}}.pkr.hcl"
+          packer validate {{.CLI_ARGS}} "templates/{{.IMAGE}}.pkr.hcl"
         else
           for tpl in templates/*.pkr.hcl; do
             echo "==> validate $tpl"
