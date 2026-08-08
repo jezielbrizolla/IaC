@@ -118,6 +118,21 @@ de reinstalar o Windows do zero.
 **Próximo: Lab 16 — Ansible via WinRM.** Vai reaproveitar o VHDX do Lab 15
 pra criar a VM de teste (mais rápido que reinstalar). Ainda não iniciado.
 
+**Plano revisado pro fim de semana (definido em 2026-08-07 à noite, ritmo
+real à frente da estimativa original):**
+
+- **Sábado:** fechar o resto do Bloco 4 — Lab 16 (Ansible), Lab 17 (golden
+  image pipeline, expandido com `post.ps1` real do JZ + multi-versão
+  2022/2025/Win11 — ver nota no Lab 17 mais abaixo), Lab 18 (Terraform +
+  provider Hyper-V). Objetivo: **Bloco 4 inteiro fechado até domingo começar**.
+- **Domingo:** Bloco 5 — Kubernetes (Labs 19-22), o "mini-KOB" que replica a
+  stack real de SRE do JZ (cluster + Vault + PostgreSQL). `#sonho` — é o
+  bloco que mais conecta com o trabalho dele.
+- Contexto pra calibrar: o plano anterior (03/08) reservava um dia só pro
+  Lab 15 "rodando, não necessariamente terminado", e outro dia pro Lab 16.
+  Na prática, Bloco 3 inteiro + Lab 15 completo couberam numa sessão de
+  3h24min (07/08 à noite) — ritmo mais rápido que o estimado.
+
 Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
 (AWS/Azure/OCI) + um gerenciador local unificando nuvem privada (Hyper-V) e
