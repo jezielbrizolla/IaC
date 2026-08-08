@@ -5,19 +5,78 @@
 ## Objetivo
 Packer produz a imagem, Terraform consome. Pipeline de duas etapas ponta a ponta.
 
-## Onde o código mora
+## Teoria
 
-- `packer/templates/capstone-nginx.pkr.hcl` — o template (reaproveita
-  `packer/scripts/install-nginx.sh`, já usado no Lab 02)
-- `packer/files/capstone/default.conf` — o conteúdo servido (o que muda
-  entre `v1` e `v2` no teste do fim)
-- `terraform/stacks/capstone-ponte/main.tf` — consome `packer/manifest.json`
+**Este lab é o encontro dos dois blocos anteriores.** Até aqui, Packer e
+Terraform viveram separados: um construía imagens, o outro provisionava
+infra. Agora eles se conectam — e o ponto de conexão é um arquivo.
 
-## Arquivos
+**O problema do handoff.** O Packer terminou e produziu uma imagem com um ID
+específico. O Terraform precisa subir um container com **aquela** imagem. Como
+o segundo descobre o que o primeiro fez?
 
-`packer/files/capstone/default.conf`:
+As respostas ruins, que aparecem em pipeline real:
 
-```nginx
+| Abordagem | Por que falha |
+|---|---|
+| Copiar o ID e colar no `.tf` | manual, esquece, fica desatualizado |
+| Usar sempre `:latest` | não é reproduzível — "latest" muda embaixo de você |
+| Script fazendo `sed` no `.tf` | código gerado por regex, frágil e ilegível |
+
+**A resposta certa: o manifest como contrato.** O Packer escreve
+`manifest.json` (Lab 05); o Terraform lê com `data "local_file"` +
+`jsondecode()`. O ID nunca é digitado por humano nenhum.
+
+**`data` vs `resource` — a distinção que este lab introduz.** Até agora você
+só usou `resource`: coisas que o Terraform **cria e gerencia**. Um `data
+source` é o oposto — algo que o Terraform apenas **lê**, sem possuir. Ele não
+aparece no plan como "will be created"; é consultado antes.
+
+Consequência prática: se o arquivo não existir, o `data` falha **antes** de
+qualquer recurso ser avaliado. É o que o "Quebre isto" demonstra.
+
+**Por que isto se chama pipeline de duas etapas.** As duas ferramentas não
+rodam juntas nem se conhecem — cada uma roda no seu momento:
+
+```text
+etapa 1: packer build   →  imagem + manifest.json
+                                    ↓ (o contrato)
+etapa 2: terraform apply ←  lê o manifest, sobe aquela imagem
+```
+
+Num CI real, essas etapas são **jobs separados**, possivelmente em máquinas
+diferentes. Aí o `manifest.json` precisa ser um artefato passado adiante — é
+por isso que a pergunta do "Quebre isto" (o que garante que o arquivo existe?)
+não é acadêmica.
+
+**O que muda na nuvem:** nada de conceito. Na AWS, o Packer taggeia a AMI e o
+Terraform acha ela com `data "aws_ami"` filtrando por tag. Mesmo padrão — o
+build deixa um rastro, o provisionamento consome. Só o mecanismo muda.
+
+## O que vamos criar
+
+| Arquivo | Papel |
+|---|---|
+| `packer/files/capstone/default.conf` | o conteúdo servido (muda de `v1` pra `v2` no teste) |
+| `packer/templates/capstone-nginx.pkr.hcl` | o template (reaproveita `packer/scripts/install-nginx.sh` do Lab 02) |
+| `terraform/stacks/capstone-ponte/main.tf` | consome `packer/manifest.json` |
+
+## Passo 1 — criar os arquivos
+
+Rode da raiz `labs/`:
+
+```powershell
+# Grava com LF, UTF-8 sem BOM e quebra de linha final — o padrão do repo
+# (ver .gitattributes). `Set-Content -Encoding UTF8` no PowerShell 5.1 grava
+# UTF-8 *com BOM*, e o BOM faz o `fmt -check` do CI falhar.
+function Write-RepoFile($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+  $lf = ($Content -replace "`r`n", "`n") + "`n"
+  [System.IO.File]::WriteAllText((Join-Path $PWD $Path), $lf, (New-Object System.Text.UTF8Encoding $false))
+}
+
+Write-RepoFile "packer/files/capstone/default.conf" @'
 server {
     listen 80;
     server_name _;
@@ -27,17 +86,9 @@ server {
         return 200 'capstone v1\n';
     }
 }
-```
+'@
 
-> `default_type`, não `add_header Content-Type` — `add_header` **acrescenta**
-> um header, não substitui. Com `return`, o corpo já tem um Content-Type
-> padrão (`application/octet-stream`); `add_header` viraria
-> `"application/octet-stream,text/plain"`, e o cliente trataria a resposta
-> como binário. Mesmo cuidado já registrado em `packer/files/nginx/default.conf`.
-
-`packer/templates/capstone-nginx.pkr.hcl`:
-
-```hcl
+Write-RepoFile "packer/templates/capstone-nginx.pkr.hcl" @'
 packer {
   required_plugins {
     docker = {
@@ -69,11 +120,9 @@ build {
     strip_path = true
   }
 }
-```
+'@
 
-`terraform/stacks/capstone-ponte/main.tf`:
-
-```hcl
+Write-RepoFile "terraform/stacks/capstone-ponte/main.tf" @'
 terraform {
   required_version = ">= 1.5"
   required_providers {
@@ -121,9 +170,16 @@ resource "docker_container" "app" {
 output "image_id" {
   value = local.image_id
 }
+'@
 ```
 
-## Rodar
+> `default_type`, não `add_header Content-Type` — `add_header` **acrescenta**
+> um header, não substitui. Com `return`, o corpo já tem um Content-Type
+> padrão (`application/octet-stream`); `add_header` viraria
+> `"application/octet-stream,text/plain"`, e o cliente trataria a resposta
+> como binário. Mesmo cuidado já registrado em `packer/files/nginx/default.conf`.
+
+## Passo 2 — rodar o pipeline
 
 Da raiz `labs/`:
 
