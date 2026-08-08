@@ -165,6 +165,16 @@ packer\manifest.json`) antes de seguir.
 ## Critério de conclusão
 Um comando de Packer + um de Terraform, e a mudança de conteúdo aparece no navegador.
 
+## Próximos passos: multi-cloud
+
+Este pipeline (Packer builda → manifest → Terraform consome) é o padrão
+inteiro que se repete trocando só o provider. O próximo track do repo — ver
+[`docs/PROXIMO-TRACK.md`](../PROXIMO-TRACK.md) — generaliza exatamente isto
+para AWS, Azure e Oracle Cloud (OCI): `source "docker"` vira `amazon-ebs` /
+`azure-arm` / `oci-...`, o `docker_container` vira `aws_instance` /
+`azurerm_linux_virtual_machine` / o equivalente OCI, e o `manifest.json` como
+ponte Packer→Terraform não muda de conceito — só de conteúdo.
+
 ## Limpeza
 
 ```powershell

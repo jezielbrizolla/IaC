@@ -98,3 +98,16 @@ tasks:
     desc: "Progresso dos checklists dos labs"
     cmds:
       - powershell -ExecutionPolicy Bypass -File automation/status.ps1
+
+  capstone:build:
+    desc: "Roda o pipeline completo do capstone: Packer builda, Terraform sobe"
+    cmds:
+      - task: packer:build
+        vars: { IMAGE: capstone-nginx }
+      - terraform -chdir=terraform/stacks/capstone-ponte init
+      - terraform -chdir=terraform/stacks/capstone-ponte apply -auto-approve
+
+  capstone:destroy:
+    desc: "Destrói o container do capstone (a limpeza de imagem já existe: task clean)"
+    cmds:
+      - terraform -chdir=terraform/stacks/capstone-ponte destroy -auto-approve

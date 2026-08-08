@@ -104,12 +104,16 @@ A maioria é independente, mas alguns exigem o resultado de outro:
 
 ## Agora
 
-**Bloco 2 (Terraform core) fechado — Labs 06 a 11 completos.** Bateu a meta
-antes de sexta. Labs 12 e 13 também fechados.
+**Bloco 3 (Capstone) fechado — Labs 12, 13 e 14 completos.** `task
+capstone:build`/`capstone:destroy` validados de ponta a ponta. Falta só, por
+decisão sua (não é bloqueio técnico): pedir pra alguém — ou você mesmo, dias
+depois — seguir só o README sem ajuda, o critério real do Lab 14.
 
-**Próximo: Lab 14 — Empacotar** (Bloco 3, o entregável — fecha o Bloco 3).
-Cria as tasks `capstone:build`/`capstone:destroy` no `Taskfile.yml` — é o
-próprio conteúdo do lab, não script pronto. Ainda não iniciado.
+**Próximo: Bloco 4 — Windows Server (Hyper-V)**, começando pelo Lab 15
+(`packer-hyperv-windows`). Já tem 1 item feito (`LabSwitch`). Ainda não
+iniciado de verdade — ver [`docs/ANALISE-MELHORIAS.md`](docs/ANALISE-MELHORIAS.md)
+pra contexto de por que esse bloco é mais pesado em tempo de parede
+(download de ISO, instalação desassistida) do que os anteriores.
 
 Depois do Bloco 3, a continuação é outro escopo — ver
 [`docs/PROXIMO-TRACK.md`](docs/PROXIMO-TRACK.md): provisionamento multi-cloud
@@ -142,10 +146,10 @@ Pendências que não pertencem a um lab específico:
 | 0 — Setup | 00 | ✅ 19/19 |
 | 1 — Packer | 01–05 | ✅ 46/46 |
 | 2 — Terraform | 06–11 | ✅ 73/73 |
-| 3 — Capstone | 12–14 | 🔶 25/37 |
+| 3 — Capstone | 12–14 | 🔶 35/36 |
 | 4 — Windows/Hyper-V | 15–18 | 🔶 1/45 |
 | 5 — Kubernetes | 19–22 | ⬜ 0/53 |
-| **Total** | | **164/273 (60%)** |
+| **Total** | | **174/272 (64%)** |
 
 > Mantido em sincronia com `task status`, que lê este arquivo. Se divergir,
 > o script é a fonte da verdade — a tabela é conveniência.
@@ -485,18 +489,18 @@ credencial; um `select` errado aplica em prod sem aviso).
 **Ensina:** transformar os labs num repositório que outra pessoa clona e roda
 sem te perguntar nada. É o entregável de portfólio.
 
-- [ ] Criar `build.ps1` (packer init/validate/build → terraform init/plan/apply)
-- [ ] Criar `destroy.ps1` (terraform destroy + limpeza de imagens/manifest/tfplan)
-- [ ] `README.md` do capstone: o que é, por quê, como rodar em 3 comandos
-- [ ] Diagrama mermaid incluído
-- [ ] `.terraform.lock.hcl` confirmado como versionado (`git check-ignore -v` vazio)
-- [ ] Versões pinadas (provider, plugin Packer, `required_version` Terraform)
-- [ ] Seção "próximos passos: AWS" com a tabela de tradução
-- [ ] `.\build.ps1` rodou do zero e funcionou
-- [ ] `.\destroy.ps1` limpou tudo (conferido com `docker ps -a` e `docker images`)
+- [x] Criar tasks `capstone:build` / `capstone:destroy` no `Taskfile.yml`
+      (não `build.ps1`/`destroy.ps1` soltos — repo já roda tudo por `task`)
+- [x] `README.md` do capstone (Labs 12 e 14): o que é, por quê, como rodar
+- [x] Diagrama mermaid incluído (README do Lab 14)
+- [x] `.terraform.lock.hcl` confirmado como versionado (`git check-ignore -v` vazio)
+- [x] Versões pinadas (provider, plugin Packer, `required_version` Terraform)
+- [x] Seção "próximos passos: multi-cloud" linkando pro `docs/PROXIMO-TRACK.md`
+- [x] `task capstone:build` rodou do zero e funcionou (`curl` confirmou `capstone v2`)
+- [x] `task capstone:destroy` + `task clean` limparam tudo (conferido com `docker ps -a`, liberou 2.2GB)
 - [ ] Pedi pra alguém (ou eu mesmo, dias depois) seguir só o README sem ajuda
-- [ ] Commit + push do capstone
-- [ ] Notas preenchidas no README
+- [x] Commit + push do capstone
+- [x] Notas preenchidas no README
 
 ---
 

@@ -121,3 +121,21 @@ literalmente o que a vaga-alvo pede ("plataformas de automação
 self-service... frameworks reutilizáveis de infraestrutura como código").
 
 ## Notas
+
+- **`task capstone:build` rodou do zero e funcionou de primeira** — o Packer
+  buildou a imagem (usando `packer/scripts/install-nginx.sh` e
+  `packer/files/capstone/default.conf`, ambos reaproveitados de labs
+  anteriores), o Terraform inicializou e aplicou, e `curl http://localhost:8080`
+  confirmou `capstone v2` — sem precisar de nenhum comando extra fora da task.
+- **`task capstone:destroy` + `task clean` limparam tudo de verdade**,
+  confirmado com `docker ps -a` (container removido). O `task clean` liberou
+  2.2GB de imagens sem tag acumuladas ao longo da sessão inteira, não só do
+  capstone — é uma limpeza geral do Docker local, não escopada por lab.
+- **Achado ao validar a sintaxe do Taskfile antes de entregar:** o
+  `Add-Content` do PowerShell sem `-Encoding UTF8` teria corrompido o "ó" de
+  "Destrói" na descrição da task — mesma classe de bug do `Set-Content` já
+  documentada nos Labs 07 e no script de autostart do Docker. Pego a tempo,
+  confirmado o encoding certo em `task --list` antes de rodar.
+- **`task: <outra-task>` com `vars:` (uma task chamando outra) não tinha
+  precedente no `Taskfile.yml`** — validei a sintaxe com `task --dry` num
+  scratch antes de sugerir, pra não entregar algo hipotético.
