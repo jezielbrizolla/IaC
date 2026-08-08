@@ -575,13 +575,12 @@ cliques em wizard, e o WinRM é como o Packer conversa com Windows.
 **Ensina:** configurar Windows por código, de forma idempotente — e a
 diferença entre módulos declarativos (`win_feature`) e `win_shell` (que sempre
 reporta `changed`).
-**Depende de:** Lab 15 (VM rodando)
-**Artefato:** `ansible/playbooks/`
+**Depende de:** Lab 15 (o VHDX da golden image)
+**Artefatos:** `ansible/inventory/lab16.yml` + `ansible/playbooks/lab16-win.yml`
 
-- [ ] Ansible + pywinrm instalados no WSL (`ansible --version`, `python -c "import winrm"`)
-- [ ] VM Windows Server rodando (IP anotado)
-- [ ] Criar `inventory.yml` com credenciais WinRM
-- [ ] Criar `playbook.yml` com tasks de feature, hardening e validação
+- [x] Ansible + pywinrm instalados no WSL (feito em 2026-08-07; confirmar com `wsl -e bash -ic "ansible --version"`)
+- [ ] VM `lab16-win` criada a partir de uma **cópia** do VHDX do Lab 15 (Gen 1), rodando e com IP anotado
+- [ ] Rodar o script do Passo 2 do README — cria inventário e playbook de uma vez
 - [ ] `ansible ... win_ping` → pong (conectividade OK)
 - [ ] `ansible-playbook` roda sem erros
 - [ ] Confirmar: IIS instalado e rodando na VM
