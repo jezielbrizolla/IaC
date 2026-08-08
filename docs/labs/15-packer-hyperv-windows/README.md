@@ -103,16 +103,14 @@ variable "admin_password" {
 }
 
 source "hyperv-iso" "win2022" {
-  iso_url             = var.iso_path
-  iso_checksum        = "none"
-  generation          = 2
-  switch_name         = var.switch_name
-  vm_name             = var.vm_name
-  disk_size           = var.disk_size_mb
-  memory              = var.memory_mb
-  cpus                = var.cpus
-  enable_secure_boot  = true
-  secure_boot_template = "MicrosoftWindows"
+  iso_url      = var.iso_path
+  iso_checksum = "none"
+  generation   = 1
+  switch_name  = var.switch_name
+  vm_name      = var.vm_name
+  disk_size    = var.disk_size_mb
+  memory       = var.memory_mb
+  cpus         = var.cpus
 
   communicator    = "winrm"
   winrm_username  = "Administrator"
@@ -122,7 +120,7 @@ source "hyperv-iso" "win2022" {
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
   boot_wait    = "0s"
-  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1>"]
+  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar>"]
 
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer shutdown\""
   shutdown_timeout = "5m"
@@ -165,16 +163,6 @@ Set-Content -Path "packer/files/win2022-base/Autounattend.xml" -Encoding UTF8 -V
           <CreatePartitions>
             <CreatePartition wcm:action="add">
               <Order>1</Order>
-              <Type>EFI</Type>
-              <Size>512</Size>
-            </CreatePartition>
-            <CreatePartition wcm:action="add">
-              <Order>2</Order>
-              <Type>MSR</Type>
-              <Size>128</Size>
-            </CreatePartition>
-            <CreatePartition wcm:action="add">
-              <Order>3</Order>
               <Type>Primary</Type>
               <Extend>true</Extend>
             </CreatePartition>
@@ -183,18 +171,9 @@ Set-Content -Path "packer/files/win2022-base/Autounattend.xml" -Encoding UTF8 -V
             <ModifyPartition wcm:action="add">
               <Order>1</Order>
               <PartitionID>1</PartitionID>
-              <Format>FAT32</Format>
-              <Label>System</Label>
-            </ModifyPartition>
-            <ModifyPartition wcm:action="add">
-              <Order>2</Order>
-              <PartitionID>2</PartitionID>
-            </ModifyPartition>
-            <ModifyPartition wcm:action="add">
-              <Order>3</Order>
-              <PartitionID>3</PartitionID>
               <Format>NTFS</Format>
               <Label>Windows</Label>
+              <Active>true</Active>
             </ModifyPartition>
           </ModifyPartitions>
         </Disk>
@@ -203,7 +182,7 @@ Set-Content -Path "packer/files/win2022-base/Autounattend.xml" -Encoding UTF8 -V
         <OSImage>
           <InstallTo>
             <DiskID>0</DiskID>
-            <PartitionID>3</PartitionID>
+            <PartitionID>1</PartitionID>
           </InstallTo>
           <InstallFrom>
             <MetaData wcm:action="add">
@@ -284,20 +263,25 @@ que mais costuma variar de máquina pra máquina.
 > dobrar (`\\`) pra representar uma barra literal. Barra normal (`/`)
 > funciona igual no Windows e evita esse detalhe todo.
 >
-> **Por que `boot_command` manda espaço 60 vezes:** mídia de instalação UEFI
-> mostra "Press any key to boot from CD or DVD..." por uma janela bem curta
-> — sem apertar a tempo, o firmware desiste e tenta o próximo dispositivo
-> (PXE, depois disco vazio). Duas tentativas mais enxutas falharam
-> (`boot_wait = "5s"` + 1 tecla; depois `boot_wait = "0s"` + 8 teclas em 8s)
-> — em ambas a VM foi pro PXE mesmo assim, mesmo com a transição da tela
-> preta pro PXE levando **menos de 5 segundos** segundo observação real.
-> Isso aponta pra latência de conexão do teclado virtual (`vmconnect`)
-> comendo a janela inteira antes da primeira tecla sequer chegar — não
-> adianta ajustar o instante, porque nenhuma tecla está sendo entregue a
-> tempo. Quando isso acontece, o firmware Gen2 tende a **ciclar** (PXE
-> falha → disco vazio falha → tenta o DVD de novo), então a estratégia
-> muda: insistir mandando espaço por bastante tempo (60s aqui) pra pegar
-> uma dessas voltas do ciclo, em vez de acertar um instante exato.
+> **Por que Generation 1, não Generation 2:** mídia de instalação mostra
+> "Press any key to boot from CD or DVD..." por uma janela curtíssima — sem
+> apertar a tempo, o firmware desiste e tenta o próximo dispositivo (PXE,
+> depois disco vazio). Três tentativas de ajustar o `boot_command` em
+> Generation 2 falharam (`boot_wait = "5s"` + 1 tecla; `"0s"` + 8 teclas em
+> 8s; `"0s"` + 60 teclas em 60s) — a VM sempre foi pro PXE, com a transição
+> da tela preta pro PXE levando **menos de 2 segundos** segundo observação
+> real. Isso não é problema de *timing* — é limitação estrutural do Gen2:
+> o teclado é um dispositivo **sintético**, que só fica pronto pra receber
+> tecla depois que um driver carrega, e esse driver não está disponível
+> nesse ponto tão inicial do boot (antes até do Windows Setup começar). Não
+> tem tecla que chegue a tempo, não importa quantas vezes se repita.
+> **Generation 1 usa teclado PS/2 emulado** — funciona desde o instante
+> zero, sem esperar driver nenhum, porque é hardware "burro" simulado, não
+> um canal que precisa negociar conexão. Troca: perde UEFI/Secure Boot, que
+> não importa pro objetivo deste lab (automação do build, não postura de
+> segurança de boot). Junto com a troca, o particionamento no
+> `Autounattend.xml` também muda: BIOS/MBR usa uma partição `Primary`
+> única marcada `Active`, não o trio EFI+MSR+Primary que UEFI/GPT exige.
 
 ## Passo 2 — rodar o build
 

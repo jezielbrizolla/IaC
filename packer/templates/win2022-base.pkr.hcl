@@ -19,16 +19,14 @@ variable "admin_password" {
 }
 
 source "hyperv-iso" "win2022" {
-  iso_url             = var.iso_path
-  iso_checksum        = "none"
-  generation          = 2
-  switch_name         = var.switch_name
-  vm_name             = var.vm_name
-  disk_size           = var.disk_size_mb
-  memory              = var.memory_mb
-  cpus                = var.cpus
-  enable_secure_boot  = true
-  secure_boot_template = "MicrosoftWindows"
+  iso_url      = var.iso_path
+  iso_checksum = "none"
+  generation   = 1
+  switch_name  = var.switch_name
+  vm_name      = var.vm_name
+  disk_size    = var.disk_size_mb
+  memory       = var.memory_mb
+  cpus         = var.cpus
 
   communicator    = "winrm"
   winrm_username  = "Administrator"
@@ -38,7 +36,7 @@ source "hyperv-iso" "win2022" {
   cd_files = ["files/win2022-base/Autounattend.xml"]
 
   boot_wait    = "0s"
-  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1><spacebar><wait1>"]
+  boot_command = ["<spacebar><wait1><spacebar><wait1><spacebar>"]
 
   shutdown_command = "shutdown /s /t 10 /f /d p:4:1 /c \"Packer shutdown\""
   shutdown_timeout = "5m"
