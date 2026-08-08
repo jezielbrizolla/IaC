@@ -7,55 +7,110 @@ Fazer o pipeline do Lab 12 (`capstone-ponte`) rodar com **um comando**, e
 deixar documentado o bastante pra um estranho clonar o repo e reproduzir sem
 te perguntar nada.
 
-> Diferente do README original: este repo **já é** o repositório de
-> portfólio (está no GitHub, é o shape de produção desde o início). Não
-> existe "copiar pra uma pasta `capstone/` separada" — o entregável é
-> deixar o pipeline do Lab 12 fácil de rodar e fácil de explicar, dentro
-> do repo que já existe.
 
-## Onde o código mora
+## Teoria
+
+**O que "empacotar" significa aqui.** O pipeline do Lab 12 funciona — mas
+funciona porque *você* lembra a sequência: buildar com o `IMAGE=` certo,
+depois `init`, depois `apply`, no diretório certo. Isso não é um produto; é
+conhecimento na sua cabeça.
+
+Empacotar é transformar essa sequência em **uma coisa que qualquer pessoa
+executa**, sem te perguntar nada. É a diferença entre "eu sei fazer" e "eu
+construí algo que funciona sem mim".
+
+**Por que ponto de entrada único importa.** Um repo de IaC acumula comandos:
+`packer build` com flags, `terraform -chdir` com caminhos, scripts de
+limpeza. Sem uma camada de verbos, esse conhecimento vive em README solto,
+histórico de shell e memória — e some quando a pessoa sai do time.
+
+O `Taskfile.yml` é essa camada neste repo: **todo comando entra por `task`**.
+A vantagem não é digitar menos, é que `task --list` responde "o que dá pra
+fazer aqui?" sem ninguém precisar explicar.
+
+**A regra que este lab respeita:** primeiro fazer na mão, depois automatizar.
+Você já rodou esses comandos separados no Lab 12 e entendeu cada um. Só agora
+faz sentido escondê-los atrás de um verbo — automatizar antes de entender é
+como criar uma caixa-preta pra si mesmo.
+
+**Reaproveitar em vez de reinventar.** O repo já tem `task clean`
+(`docker image prune -f`). O `capstone:destroy` não precisa de lógica própria
+de limpeza de imagem — e tentar filtrar por nome seria pior, porque a imagem
+do capstone nem tem tag (o template usa só `commit = true`, sem
+`docker-tag`). Saber o que **não** escrever é parte do trabalho.
+
+**Atenção ao shell.** O `cmds:` do Taskfile é interpretado por
+**shell POSIX** (`mvdan/sh`), não PowerShell — mesmo no Windows. Escrever
+`Get-ChildItem` ou `ForEach-Object` ali dentro parece funcionar (o YAML
+aceita), mas quebra na hora de rodar. É o comentário que já existe no
+`packer:validate`.
+
+## O que vamos criar
 
 Duas tasks novas em `Taskfile.yml`, na raiz — não scripts soltos. O repo
-inteiro já funciona assim (`task packer:build`, `task tf:apply`, etc.); o
-capstone não deveria ser a exceção que quebra "todo comando entra por
+inteiro já funciona assim (`task packer:build`, `task status`, `task clean`);
+o capstone não deveria ser a exceção que quebra "todo comando entra por
 `task`".
 
-## Tasks a criar
+> Diferente do README original deste lab: este repo **já é** o repositório de
+> portfólio (está no GitHub, é o shape de produção desde o início). Não
+> existe "copiar pra uma pasta `capstone/` separada" — o entregável é deixar
+> o pipeline do Lab 12 fácil de rodar e fácil de explicar, dentro do repo que
+> já existe.
 
-`capstone:build` — builda a imagem e sobe o container, os dois comandos do
-Lab 12 em sequência:
+## Passo 1 — adicionar as tasks ao Taskfile
 
-```yaml
-capstone:build:
-  desc: "Roda o pipeline completo do capstone: Packer builda, Terraform sobe"
-  cmds:
-    - task: packer:build
-      vars: { IMAGE: capstone-nginx }
-    - terraform -chdir=terraform/stacks/capstone-ponte init
-    - terraform -chdir=terraform/stacks/capstone-ponte apply -auto-approve
+Este lab **acrescenta** a um arquivo existente em vez de criar um novo — por
+isso o script usa append, não overwrite (senão você perderia todas as outras
+tasks).
+
+Rode da raiz `labs/`:
+
+```powershell
+# Acrescenta ao final do Taskfile.yml preservando LF (o padrão do repo para
+# *.yml, ver .gitattributes). Note que é append: sobrescrever apagaria as
+# tasks que já existem.
+$novasTasks = @'
+
+  capstone:build:
+    desc: "Roda o pipeline completo do capstone: Packer builda, Terraform sobe"
+    cmds:
+      - task: packer:build
+        vars: { IMAGE: capstone-nginx }
+      - terraform -chdir=terraform/stacks/capstone-ponte init
+      - terraform -chdir=terraform/stacks/capstone-ponte apply -auto-approve
+
+  capstone:destroy:
+    desc: "Destrói o container do capstone (a limpeza de imagem já existe: task clean)"
+    cmds:
+      - terraform -chdir=terraform/stacks/capstone-ponte destroy -auto-approve
+'@ -replace "`r`n", "`n"
+
+$atual = [System.IO.File]::ReadAllText("$PWD/Taskfile.yml", [System.Text.Encoding]::UTF8) -replace "`r`n", "`n"
+[System.IO.File]::WriteAllText("$PWD/Taskfile.yml", $atual.TrimEnd() + "`n" + $novasTasks + "`n", (New-Object System.Text.UTF8Encoding $false))
 ```
 
-`capstone:destroy` — desfaz e limpa:
+Confirme que as duas apareceram, com os acentos corretos:
 
-```yaml
-capstone:destroy:
-  desc: "Destrói o container do capstone (a limpeza de imagem já existe: task clean)"
-  cmds:
-    - terraform -chdir=terraform/stacks/capstone-ponte destroy -auto-approve
+```powershell
+task --list
 ```
 
-Repare que **não precisa reinventar** a limpeza de imagem: o template
-`capstone-nginx.pkr.hcl` não tem `post-processor "docker-tag"` (só
-`commit = true`), então a imagem gerada fica sem tag — exatamente o que
-`task clean` (`docker image prune -f`) já remove. Rode `task clean` depois
-de `capstone:destroy` se quiser limpar a imagem também, em vez de duplicar
-lógica de filtro por nome de imagem que nem existe aqui.
+Se `Destrói` aparecer como `DestrÃ³i`, o encoding saiu errado — refaça o
+passo (foi o motivo de o script acima usar `WriteAllText` com UTF-8 explícito
+em vez de `Add-Content`).
 
-> Confira a sintaxe (`cmds:`, `dir:`, `preconditions:`) contra as tasks que
-> já existem no arquivo — copie o estilo que já está lá, não invente um
-> novo. E lembre: `cmds` é interpretado por shell POSIX (`mvdan/sh`), não
-> PowerShell, mesmo no Windows — nada de `Get-ChildItem`/`ForEach-Object`
-> direto num `cmds:` (é o comentário que já existe em `packer:validate`).
+## Passo 2 — rodar
+
+```powershell
+task capstone:build
+curl http://localhost:8080
+task capstone:destroy
+task clean
+```
+
+Um comando builda a imagem **e** sobe o container. Outro desfaz. É o
+entregável do lab.
 
 ## Checklist do conteúdo
 
@@ -87,17 +142,6 @@ flowchart LR
   D --> E[terraform apply]
   C --> E
   E --> F[container rodando :8080]
-```
-
-## Rodar
-
-Da raiz `labs/`:
-
-```powershell
-task capstone:build
-curl http://localhost:8080
-task capstone:destroy
-task clean
 ```
 
 ## O critério real
